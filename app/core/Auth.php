@@ -14,6 +14,31 @@ class Auth
             header('Location: ' . BASE_URL . '?page=login');
             exit;
         }
+
+        /*
+         * Tant que le mot de passe temporaire n’est pas changé,
+         * l’utilisateur ne peut accéder à aucune autre page.
+         */
+        $pageActuelle =
+            $_GET['page']
+            ?? 'dashboard';
+
+        $pagesAutorisees = [
+            'changer-mot-de-passe-obligatoire',
+            'logout'
+        ];
+
+        if (
+            (int)($_SESSION['doit_changer_mdp'] ?? 0) === 1 &&
+            !in_array($pageActuelle, $pagesAutorisees, true)
+        ) {
+            header(
+                'Location: ' .
+                BASE_URL .
+                '?page=changer-mot-de-passe-obligatoire'
+            );
+            exit;
+        }
     }
 
     public static function autoriser(array $rolesAutorises)
@@ -31,10 +56,9 @@ class Auth
         );
 
         /*
-         * Correspondance avec les IDs de ta table role :
          * 1 = Administrateur
          * 2 = Technicien
-         * 3 = Employé / Utilisateur
+         * 3 = Employé
          */
         $roleParId = '';
 
@@ -59,16 +83,24 @@ class Auth
         );
 
         if (!$autoriseParNom && !$autoriseParId) {
-            $_SESSION['error'] = 'Accès refusé : vous ne disposez pas des permissions nécessaires.';
+            $_SESSION['error'] =
+                'Accès refusé : vous ne disposez pas des permissions nécessaires.';
 
-            header('Location: ' . BASE_URL . '?page=acces-refuse');
+            header(
+                'Location: ' .
+                BASE_URL .
+                '?page=acces-refuse'
+            );
             exit;
         }
     }
 
     public static function estAdmin()
     {
-        $role = self::normaliserRole($_SESSION['nom_role'] ?? '');
+        $role = self::normaliserRole(
+            $_SESSION['nom_role'] ?? ''
+        );
+
         $idRole = (int)($_SESSION['id_role'] ?? 0);
 
         return $role === 'administrateur'
@@ -78,7 +110,10 @@ class Auth
 
     public static function estTechnicien()
     {
-        $role = self::normaliserRole($_SESSION['nom_role'] ?? '');
+        $role = self::normaliserRole(
+            $_SESSION['nom_role'] ?? ''
+        );
+
         $idRole = (int)($_SESSION['id_role'] ?? 0);
 
         return $role === 'technicien'
@@ -87,7 +122,10 @@ class Auth
 
     public static function estEmploye()
     {
-        $role = self::normaliserRole($_SESSION['nom_role'] ?? '');
+        $role = self::normaliserRole(
+            $_SESSION['nom_role'] ?? ''
+        );
+
         $idRole = (int)($_SESSION['id_role'] ?? 0);
 
         return in_array(
@@ -113,8 +151,22 @@ class Auth
         $role = mb_strtolower($role, 'UTF-8');
 
         $role = str_replace(
-            ['é', 'è', 'ê', 'ë', 'à', 'â', 'ä', 'î', 'ï', 'ô', 'ö', 'ù', 'û', 'ü', 'ç'],
-            ['e', 'e', 'e', 'e', 'a', 'a', 'a', 'i', 'i', 'o', 'o', 'u', 'u', 'u', 'c'],
+            [
+                'é', 'è', 'ê', 'ë',
+                'à', 'â', 'ä',
+                'î', 'ï',
+                'ô', 'ö',
+                'ù', 'û', 'ü',
+                'ç'
+            ],
+            [
+                'e', 'e', 'e', 'e',
+                'a', 'a', 'a',
+                'i', 'i',
+                'o', 'o',
+                'u', 'u', 'u',
+                'c'
+            ],
             $role
         );
 

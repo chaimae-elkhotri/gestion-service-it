@@ -36,10 +36,10 @@ class TicketController extends Controller
         }
 
         /*
-         * L’employé ne doit voir que ses propres tickets.
+         * L’employé ne voit que ses propres tickets.
          */
         if (Auth::estEmploye()) {
-            $idUtilisateurConnecte = (int) Auth::idUtilisateur();
+            $idUtilisateurConnecte = (int)Auth::idUtilisateur();
 
             $tickets = array_filter(
                 $tickets,
@@ -63,11 +63,6 @@ class TicketController extends Controller
         $moyens = $this->moyenModel->getAll();
         $equipements = $this->equipementModel->getAll();
 
-        /*
-         * L’employé est automatiquement associé à son ticket.
-         * La liste des utilisateurs est utile seulement pour l’admin
-         * et éventuellement le technicien.
-         */
         if (!Auth::estEmploye()) {
             $utilisateurs = $this->utilisateurModel->getAll();
         }
@@ -86,13 +81,8 @@ class TicketController extends Controller
             exit();
         }
 
-        /*
-         * Pour l’employé :
-         * - utilisateur connecté automatiquement ;
-         * - statut automatiquement Ouvert.
-         */
         if (Auth::estEmploye()) {
-            $idUtilisateur = (int) Auth::idUtilisateur();
+            $idUtilisateur = (int)Auth::idUtilisateur();
             $statut = 'Ouvert';
         } else {
             $idUtilisateur = (int)($_POST['id_utilisateur'] ?? 0);
@@ -164,6 +154,23 @@ class TicketController extends Controller
         }
 
         /*
+         * Un ticket annulé ne peut plus être modifié.
+         */
+        $statutTicket = strtolower(trim($ticket['statut'] ?? ''));
+
+        if (
+            $statutTicket === 'annulé' ||
+            $statutTicket === 'annule'
+        ) {
+            header(
+                "Location: " .
+                BASE_URL .
+                "?page=tickets&message=ticket-annule-non-modifiable"
+            );
+            exit();
+        }
+
+        /*
          * Un employé ne peut modifier que son propre ticket.
          */
         if (
@@ -213,6 +220,25 @@ class TicketController extends Controller
         }
 
         /*
+         * Un ticket annulé ne peut plus être modifié.
+         */
+        $ancienStatut = strtolower(
+            trim($ancienTicket['statut'] ?? '')
+        );
+
+        if (
+            $ancienStatut === 'annulé' ||
+            $ancienStatut === 'annule'
+        ) {
+            header(
+                "Location: " .
+                BASE_URL .
+                "?page=tickets&message=ticket-annule-non-modifiable"
+            );
+            exit();
+        }
+
+        /*
          * Un employé ne peut modifier que son propre ticket.
          */
         if (
@@ -226,10 +252,6 @@ class TicketController extends Controller
 
         if (Auth::estEmploye()) {
             $idUtilisateur = (int)Auth::idUtilisateur();
-
-            /*
-             * L’employé ne change pas lui-même le statut technique.
-             */
             $statut = $ancienTicket['statut'] ?? 'Ouvert';
         } else {
             $idUtilisateur = (int)($_POST['id_utilisateur'] ?? 0);
@@ -274,7 +296,8 @@ class TicketController extends Controller
     public function delete()
     {
         /*
-         * Seul l’administrateur peut supprimer un ticket.
+         * Le nom de la méthode reste delete pour conserver
+         * la route existante, mais le ticket est seulement annulé.
          */
         Auth::autoriser([1]);
 
@@ -283,31 +306,62 @@ class TicketController extends Controller
             exit();
         }
 
-        $id = (int)$_GET['id'];
+        $idTicket = (int)$_GET['id'];
 
-        $ancienTicket = $this->ticketModel->getById($id);
+        $ancienTicket = $this->ticketModel->getById($idTicket);
 
         if (!$ancienTicket) {
             header("Location: " . BASE_URL . "?page=tickets");
             exit();
         }
 
-        $result = $this->ticketModel->delete($id);
+        $ancienStatut = strtolower(
+            trim($ancienTicket['statut'] ?? '')
+        );
+
+        /*
+         * Empêcher une deuxième annulation.
+         */
+        if (
+            $ancienStatut === 'annulé' ||
+            $ancienStatut === 'annule'
+        ) {
+            header(
+                "Location: " .
+                BASE_URL .
+                "?page=tickets&message=ticket-deja-annule"
+            );
+            exit();
+        }
+
+        $result = $this->ticketModel->cancel($idTicket);
 
         if ($result) {
             Historique::enregistrer(
                 'ticket',
-                $id,
-                'Suppression',
+                $idTicket,
+                'Annulation',
                 json_encode(
                     $ancienTicket,
                     JSON_UNESCAPED_UNICODE
                 ),
-                null
+                json_encode(
+                    [
+                        'id_ticket' => $idTicket,
+                        'ancien_statut' =>
+                            $ancienTicket['statut'] ?? '',
+                        'nouveau_statut' => 'Annulé'
+                    ],
+                    JSON_UNESCAPED_UNICODE
+                )
             );
         }
 
-        header("Location: " . BASE_URL . "?page=tickets");
+        header(
+            "Location: " .
+            BASE_URL .
+            "?page=tickets&message=ticket-annule"
+        );
         exit();
     }
 }

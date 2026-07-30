@@ -1,4 +1,4 @@
-css = r''':root {
+:root {
     --brown: #6f4324;
     --brown-dark: #4b2c19;
     --brown-light: #8b5a35;
@@ -3418,9 +3418,121 @@ a.btn-primary:hover,
 .dashboard-welcome-card.technician p {
     color: #ffffff !important;
 }
+/* Ticket annulé */
 
-path = "/mnt/data/style_corrige.css"
-with open(path, "w", encoding="utf-8") as f:
-    f.write(css)
+.ticket-cancelled {
+    background-color: #f1e7e1 !important;
+    color: #7a4526 !important;
+    border: 1px solid #dcc7b9 !important;
+}
 
-path
+.ticket-row-cancelled {
+    background-color: #faf7f5 !important;
+    opacity: 0.85;
+}
+
+.ticket-row-cancelled:hover {
+    background-color: #f7f0eb !important;
+}
+/* ================================
+   Système multilingue FR / AR
+================================ */
+
+html[dir="rtl"] body {
+    font-family: "Tajawal", sans-serif;
+}
+
+html[dir="ltr"] body {
+    font-family: "Poppins", sans-serif;
+}
+
+html[dir="rtl"] .sidebar,
+html[dir="rtl"] .sidebar-menu,
+html[dir="rtl"] .support-modal-content,
+html[dir="rtl"] .clean-profile-menu {
+    direction: rtl;
+    text-align: right;
+}
+
+html[dir="rtl"] .sidebar-menu a,
+html[dir="rtl"] .sidebar-help,
+html[dir="rtl"] .sidebar-logout a,
+html[dir="rtl"] .support-item,
+html[dir="rtl"] .clean-profile-item,
+html[dir="rtl"] .clean-profile-header {
+    direction: rtl;
+}
+
+html[dir="rtl"] .top-navbar,
+html[dir="rtl"] .page-title,
+html[dir="rtl"] .navbar-right,
+html[dir="rtl"] .user-info-button {
+    direction: rtl;
+}
+
+html[dir="rtl"] input,
+html[dir="rtl"] textarea,
+html[dir="rtl"] select {
+    text-align: right;
+}
+
+html[dir="rtl"] .table {
+    direction: rtl;
+}
+
+html[dir="rtl"] .modal-header .btn-close {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+html[dir="rtl"] .dropdown-menu {
+    text-align: right;
+}
+/* ================================
+   Correction position RTL arabe
+================================ */
+
+html[dir="rtl"] .sidebar {
+    left: auto !important;
+    right: 0 !important;
+    box-shadow: -8px 0 30px rgba(75, 44, 25, 0.18) !important;
+}
+
+html[dir="rtl"] .content {
+    margin-left: 0 !important;
+    margin-right: 270px !important;
+}
+
+html[dir="rtl"] .sidebar-menu a:hover,
+html[dir="rtl"] .sidebar-logout a:hover {
+    transform: translateX(-4px) !important;
+}
+
+html[dir="rtl"] .back-to-top-btn {
+    right: auto !important;
+    left: 25px !important;
+}
+
+/* Tablettes */
+@media (max-width: 992px) {
+
+    html[dir="rtl"] .content {
+        margin-left: 0 !important;
+        margin-right: 230px !important;
+    }
+}
+
+/* Téléphones */
+@media (max-width: 768px) {
+
+    html[dir="rtl"] .sidebar {
+        position: relative !important;
+        width: 100% !important;
+        right: auto !important;
+    }
+
+    html[dir="rtl"] .content {
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+    }
+}

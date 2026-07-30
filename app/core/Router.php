@@ -6,6 +6,7 @@ require_once '../app/controllers/UtilisateurController.php';
 require_once '../app/controllers/CategorieController.php';
 require_once '../app/controllers/EquipementController.php';
 require_once '../app/controllers/LocalController.php';
+require_once '../app/controllers/OccupationLocalController.php';
 require_once '../app/controllers/AffectationController.php';
 require_once '../app/controllers/TicketController.php';
 require_once '../app/controllers/LicenceController.php';
@@ -22,9 +23,34 @@ class Router
 
         switch ($page) {
 
+            /*
+             * Authentification
+             */
+
+            case 'login':
+                (new AuthController())->login();
+                break;
+
+            case 'changer-mot-de-passe-obligatoire':
+                (new AuthController())
+                    ->changerMotDePasseObligatoire();
+                break;
+
+            case 'logout':
+                (new AuthController())->logout();
+                break;
+
+            /*
+             * Tableau de bord
+             */
+
             case 'dashboard':
                 (new DashboardController())->index();
                 break;
+
+            /*
+             * Utilisateurs
+             */
 
             case 'utilisateurs':
                 (new UtilisateurController())->index();
@@ -38,6 +64,15 @@ class Router
                 (new UtilisateurController())->store();
                 break;
 
+            case 'importer-utilisateurs':
+                (new UtilisateurController())->importCsv();
+                break;
+
+            case 'modele-import-utilisateurs':
+                (new UtilisateurController())
+                    ->modeleImportCsv();
+                break;
+
             case 'modifier-utilisateur':
                 (new UtilisateurController())->edit();
                 break;
@@ -49,6 +84,10 @@ class Router
             case 'supprimer-utilisateur':
                 (new UtilisateurController())->delete();
                 break;
+
+            /*
+             * Catégories
+             */
 
             case 'categories':
                 (new CategorieController())->index();
@@ -74,6 +113,10 @@ class Router
                 (new CategorieController())->delete();
                 break;
 
+            /*
+             * Équipements
+             */
+
             case 'equipements':
                 (new EquipementController())->index();
                 break;
@@ -86,10 +129,16 @@ class Router
                 (new EquipementController())->store();
                 break;
 
-            case 'modifier-equipement':
-                (new EquipementController())->edit();
+            case 'importer-equipements':
+                (new EquipementController())->importCsv();
                 break;
 
+            case 'modele-import-equipements':
+                (new EquipementController())
+                    ->modeleImportCsv();
+                break;
+
+            case 'modifier-equipement':
             case 'edit-equipement':
                 (new EquipementController())->edit();
                 break;
@@ -101,6 +150,10 @@ class Router
             case 'supprimer-equipement':
                 (new EquipementController())->delete();
                 break;
+
+            /*
+             * Locaux
+             */
 
             case 'locals':
                 (new LocalController())->index();
@@ -126,6 +179,38 @@ class Router
                 (new LocalController())->delete();
                 break;
 
+            /*
+             * Occupations et disponibilité des locaux
+             */
+
+            case 'occupations-locaux':
+                (new OccupationLocalController())->index();
+                break;
+
+            case 'ajouter-occupation-local':
+                (new OccupationLocalController())->create();
+                break;
+
+            case 'enregistrer-occupation-local':
+                (new OccupationLocalController())->store();
+                break;
+
+            case 'modifier-occupation-local':
+                (new OccupationLocalController())->edit();
+                break;
+
+            case 'mettre-a-jour-occupation-local':
+                (new OccupationLocalController())->update();
+                break;
+
+            case 'annuler-occupation-local':
+                (new OccupationLocalController())->cancel();
+                break;
+
+            /*
+             * Affectations
+             */
+
             case 'affectations':
                 (new AffectationController())->index();
                 break;
@@ -149,6 +234,10 @@ class Router
             case 'supprimer-affectation':
                 (new AffectationController())->delete();
                 break;
+
+            /*
+             * Tickets
+             */
 
             case 'tickets':
                 (new TicketController())->index();
@@ -174,6 +263,10 @@ class Router
                 (new TicketController())->delete();
                 break;
 
+            /*
+             * Interventions
+             */
+
             case 'interventions':
                 (new InterventionController())->index();
                 break;
@@ -197,6 +290,10 @@ class Router
             case 'supprimer-intervention':
                 (new InterventionController())->delete();
                 break;
+
+            /*
+             * Évaluations
+             */
 
             case 'evaluations':
                 (new EvaluationController())->index();
@@ -222,6 +319,10 @@ class Router
                 (new EvaluationController())->delete();
                 break;
 
+            /*
+             * Logiciels
+             */
+
             case 'logiciels':
                 (new LogicielController())->index();
                 break;
@@ -232,6 +333,15 @@ class Router
 
             case 'enregistrer-logiciel':
                 (new LogicielController())->store();
+                break;
+
+            case 'importer-logiciels':
+                (new LogicielController())->importCsv();
+                break;
+
+            case 'modele-import-logiciels':
+                (new LogicielController())
+                    ->modeleImportCsv();
                 break;
 
             case 'modifier-logiciel':
@@ -245,6 +355,10 @@ class Router
             case 'supprimer-logiciel':
                 (new LogicielController())->delete();
                 break;
+
+            /*
+             * Licences
+             */
 
             case 'licences':
                 (new LicenceController())->index();
@@ -270,6 +384,10 @@ class Router
                 (new LicenceController())->delete();
                 break;
 
+            /*
+             * Historique
+             */
+
             case 'historiques':
                 (new HistoriqueController())->index();
                 break;
@@ -278,27 +396,43 @@ class Router
                 (new HistoriqueController())->delete();
                 break;
 
-            case 'login':
-                (new AuthController())->login();
-                break;
-                case 'profil':
-    require_once '../app/controllers/ProfilController.php';
-    $controller = new ProfilController();
-    $controller->index();
-    break;
+            /*
+             * Profil et paramètres
+             */
 
-case 'parametres-compte':
-    require_once '../app/controllers/ProfilController.php';
-    $controller = new ProfilController();
-    $controller->parametres();
-    break;
-    case 'acces-refuse':
-    require_once '../app/views/errors/acces-refuse.php';
-    break;
+            case 'profil':
+                require_once '../app/controllers/ProfilController.php';
+
+                $controller = new ProfilController();
+                $controller->index();
+                break;
+
+            case 'parametres-compte':
+                require_once '../app/controllers/ProfilController.php';
+
+                $controller = new ProfilController();
+                $controller->parametres();
+                break;
+
+            /*
+             * Accès refusé
+             */
+
+            case 'acces-refuse':
+                require_once '../app/views/errors/acces-refuse.php';
+                break;
+
+            /*
+             * Page inexistante
+             */
 
             default:
-                (new AuthController())->login();
-                break;
+                header(
+                    'Location: ' .
+                    BASE_URL .
+                    '?page=login'
+                );
+                exit;
         }
     }
 }

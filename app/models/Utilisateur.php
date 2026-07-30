@@ -48,40 +48,42 @@ class Utilisateur
     }
 
     public function insert($data)
-    {
-        $sql = "INSERT INTO utilisateur
-                (
-                    NOM,
-                    PRENOM,
-                    EMAIL,
-                    MOT_DE_PASSE,
-                    TELEPHONE,
-                    STATUT,
-                    ID_ROLE
-                )
-                VALUES
-                (
-                    :nom,
-                    :prenom,
-                    :email,
-                    :mot_de_passe,
-                    :tel,
-                    :statut,
-                    :id_role
-                )";
+{
+    $sql = "INSERT INTO utilisateur
+            (
+                NOM,
+                PRENOM,
+                EMAIL,
+                MOT_DE_PASSE,
+                DOIT_CHANGER_MDP,
+                TELEPHONE,
+                STATUT,
+                ID_ROLE
+            )
+            VALUES
+            (
+                :nom,
+                :prenom,
+                :email,
+                :mot_de_passe,
+                1,
+                :tel,
+                :statut,
+                :id_role
+            )";
 
-        $stmt = $this->db->prepare($sql);
+    $stmt = $this->db->prepare($sql);
 
-        return $stmt->execute([
-            ':nom' => $data['nom'],
-            ':prenom' => $data['prenom'],
-            ':email' => $data['email'],
-            ':mot_de_passe' => $data['mot_de_passe'],
-            ':tel' => $data['tel'],
-            ':statut' => $data['statut'],
-            ':id_role' => $data['id_role']
-        ]);
-    }
+    return $stmt->execute([
+        ':nom' => $data['nom'],
+        ':prenom' => $data['prenom'],
+        ':email' => $data['email'],
+        ':mot_de_passe' => $data['mot_de_passe'],
+        ':tel' => $data['tel'],
+        ':statut' => $data['statut'],
+        ':id_role' => $data['id_role']
+    ]);
+}
 
     public function getById($id)
     {
@@ -105,6 +107,10 @@ class Utilisateur
 
     public function update($id, $data)
     {
+        /*
+         * Si l’administrateur attribue un nouveau mot de passe,
+         * l’utilisateur devra le changer à sa prochaine connexion.
+         */
         if (!empty($data['mot_de_passe'])) {
 
             $sql = "UPDATE utilisateur SET
@@ -112,6 +118,7 @@ class Utilisateur
                         PRENOM = :prenom,
                         EMAIL = :email,
                         MOT_DE_PASSE = :mot_de_passe,
+                        DOIT_CHANGER_MDP = 1,
                         TELEPHONE = :tel,
                         STATUT = :statut,
                         ID_ROLE = :id_role
@@ -129,31 +136,49 @@ class Utilisateur
                 ':id_role' => $data['id_role'],
                 ':id' => $id
             ]);
-
-        } else {
-
-            $sql = "UPDATE utilisateur SET
-                        NOM = :nom,
-                        PRENOM = :prenom,
-                        EMAIL = :email,
-                        TELEPHONE = :tel,
-                        STATUT = :statut,
-                        ID_ROLE = :id_role
-                    WHERE ID_UTILISATEUR = :id";
-
-            $stmt = $this->db->prepare($sql);
-
-            return $stmt->execute([
-                ':nom' => $data['nom'],
-                ':prenom' => $data['prenom'],
-                ':email' => $data['email'],
-                ':tel' => $data['tel'],
-                ':statut' => $data['statut'],
-                ':id_role' => $data['id_role'],
-                ':id' => $id
-            ]);
         }
+
+        $sql = "UPDATE utilisateur SET
+                    NOM = :nom,
+                    PRENOM = :prenom,
+                    EMAIL = :email,
+                    TELEPHONE = :tel,
+                    STATUT = :statut,
+                    ID_ROLE = :id_role
+                WHERE ID_UTILISATEUR = :id";
+
+        $stmt = $this->db->prepare($sql);
+
+        return $stmt->execute([
+            ':nom' => $data['nom'],
+            ':prenom' => $data['prenom'],
+            ':email' => $data['email'],
+            ':tel' => $data['tel'],
+            ':statut' => $data['statut'],
+            ':id_role' => $data['id_role'],
+            ':id' => $id
+        ]);
     }
+
+    public function changerMotDePasse($idUtilisateur, $nouveauMotDePasse)
+{
+    $motDePasseHash = password_hash(
+        $nouveauMotDePasse,
+        PASSWORD_DEFAULT
+    );
+
+    $sql = "UPDATE utilisateur
+            SET MOT_DE_PASSE = :mot_de_passe,
+                DOIT_CHANGER_MDP = 0
+            WHERE ID_UTILISATEUR = :id_utilisateur";
+
+    $stmt = $this->db->prepare($sql);
+
+    return $stmt->execute([
+        ':mot_de_passe' => $motDePasseHash,
+        ':id_utilisateur' => $idUtilisateur
+    ]);
+}
 
     public function delete($id)
     {

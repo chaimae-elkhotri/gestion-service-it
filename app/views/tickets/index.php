@@ -3,27 +3,171 @@
 <?php require_once '../app/views/layouts/navbar.php'; ?>
 
 <?php
+
 $tickets = $tickets ?? [];
+
+if (!function_exists('ticketT')) {
+    function ticketT(
+        string $key,
+        array $replacements = []
+    ): string {
+        return t(
+            'tickets_module.' . $key,
+            $replacements
+        );
+    }
+}
+
+if (!function_exists('ticketNormalize')) {
+    function ticketNormalize(string $value): string
+    {
+        $value = mb_strtolower(
+            trim($value),
+            'UTF-8'
+        );
+
+        return strtr($value, [
+            'é' => 'e',
+            'è' => 'e',
+            'ê' => 'e',
+            'ë' => 'e',
+            'à' => 'a',
+            'â' => 'a',
+            'î' => 'i',
+            'ï' => 'i',
+            'ô' => 'o',
+            'ù' => 'u',
+            'û' => 'u',
+            'ç' => 'c'
+        ]);
+    }
+}
+
+if (!function_exists('ticketPriorityLabel')) {
+    function ticketPriorityLabel(string $value): string
+    {
+        return match (ticketNormalize($value)) {
+            'basse' => ticketT('priority_low'),
+            'moyenne' => ticketT('priority_medium'),
+            'haute' => ticketT('priority_high'),
+            default => $value !== ''
+                ? $value
+                : ticketT('undefined')
+        };
+    }
+}
+
+if (!function_exists('ticketStatusLabel')) {
+    function ticketStatusLabel(string $value): string
+    {
+        return match (ticketNormalize($value)) {
+            'ouvert' => ticketT('status_open'),
+            'en cours' => ticketT('status_in_progress'),
+            'en attente' => ticketT('status_waiting'),
+            'resolu' => ticketT('status_resolved'),
+            'annule' => ticketT('status_cancelled'),
+            default => $value !== ''
+                ? $value
+                : ticketT('undefined')
+        };
+    }
+}
+
+if (!function_exists('ticketCommunicationLabel')) {
+    function ticketCommunicationLabel(string $value): string
+    {
+        return match (ticketNormalize($value)) {
+            'email', 'e-mail' => ticketT('communication_email'),
+            'telephone' => ticketT('communication_phone'),
+            'presentiel' => ticketT('communication_in_person'),
+            default => $value !== ''
+                ? $value
+                : '-'
+        };
+    }
+}
+
+$filtrePriorite = ticketNormalize(
+    (string)($_GET['priorite'] ?? '')
+);
+
+$filtreStatut = ticketNormalize(
+    (string)($_GET['statut'] ?? '')
+);
+
+if (
+    $filtrePriorite !== ''
+    || $filtreStatut !== ''
+) {
+    $tickets = array_values(
+        array_filter(
+            $tickets,
+            function (array $ticket) use (
+                $filtrePriorite,
+                $filtreStatut
+            ): bool {
+                $prioriteTicket = ticketNormalize(
+                    (string)(
+                        $ticket['priorite']
+                        ?? $ticket['PRIORITE']
+                        ?? ''
+                    )
+                );
+
+                $statutTicket = ticketNormalize(
+                    (string)(
+                        $ticket['statut']
+                        ?? $ticket['STATUT']
+                        ?? ''
+                    )
+                );
+
+                $prioriteCorrespond =
+                    $filtrePriorite === ''
+                    || $prioriteTicket ===
+                        $filtrePriorite;
+
+                $statutCorrespond =
+                    $filtreStatut === ''
+                    || $statutTicket ===
+                        $filtreStatut;
+
+                return $prioriteCorrespond
+                    && $statutCorrespond;
+            }
+        )
+    );
+}
 
 $totalTickets = count($tickets);
 $totalOuverts = 0;
 $totalEnCours = 0;
 $totalEnAttente = 0;
 $totalResolus = 0;
+$totalAnnules = 0;
 
 foreach ($tickets as $ticket) {
-    $statut = strtolower($ticket['statut'] ?? $ticket['STATUT'] ?? '');
+    $statut = ticketNormalize(
+        (string)(
+            $ticket['statut']
+            ?? $ticket['STATUT']
+            ?? ''
+        )
+    );
 
-    if ($statut == 'ouvert') {
+    if ($statut === 'ouvert') {
         $totalOuverts++;
-    } elseif ($statut == 'en cours') {
+    } elseif ($statut === 'en cours') {
         $totalEnCours++;
-    } elseif ($statut == 'en attente') {
+    } elseif ($statut === 'en attente') {
         $totalEnAttente++;
-    } elseif ($statut == 'résolu' || $statut == 'resolu') {
+    } elseif ($statut === 'resolu') {
         $totalResolus++;
+    } elseif ($statut === 'annule') {
+        $totalAnnules++;
     }
 }
+
 ?>
 
 <div class="module-page">
@@ -31,61 +175,127 @@ foreach ($tickets as $ticket) {
     <div class="module-header">
 
         <div>
-            <h2>Gestion des tickets</h2>
-            <p>Suivez les demandes d’assistance et les incidents déclarés.</p>
+            <h2><?= htmlspecialchars(ticketT('management_title')); ?></h2>
+
+            <p>
+                <?= htmlspecialchars(ticketT('management_subtitle')); ?>
+            </p>
         </div>
 
-        <a href="<?= BASE_URL ?>?page=ajouter-ticket" class="btn btn-primary">
+        <a href="<?= BASE_URL ?>?page=ajouter-ticket"
+           class="btn btn-primary">
+
             <i class="bi bi-plus-circle"></i>
-            Nouveau ticket
+            <?= htmlspecialchars(ticketT('new_ticket')); ?>
+
         </a>
 
     </div>
 
+    <?php if (($_GET['message'] ?? '') === 'ticket-annule'): ?>
+
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle-fill"></i>
+            <?= htmlspecialchars(ticketT('ticket_cancelled_success')); ?>
+        </div>
+
+    <?php elseif (($_GET['message'] ?? '') === 'ticket-deja-annule'): ?>
+
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <?= htmlspecialchars(ticketT('ticket_already_cancelled')); ?>
+        </div>
+
+    <?php elseif (
+        ($_GET['message'] ?? '') ===
+        'ticket-annule-non-modifiable'
+    ): ?>
+
+        <div class="alert alert-warning">
+            <i class="bi bi-lock-fill"></i>
+            <?= htmlspecialchars(ticketT('cancelled_ticket_locked')); ?>
+        </div>
+
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['success'])): ?>
+
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <?= htmlspecialchars($_SESSION['success']); ?>
+        </div>
+
+        <?php unset($_SESSION['success']); ?>
+
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['error'])): ?>
+
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <?= htmlspecialchars($_SESSION['error']); ?>
+        </div>
+
+        <?php unset($_SESSION['error']); ?>
+
+    <?php endif; ?>
+
     <div class="module-stats-grid">
 
         <div class="module-stat-card">
+
             <div class="module-stat-icon brown">
                 <i class="bi bi-ticket-detailed-fill"></i>
             </div>
+
             <div>
-                <span>Total tickets</span>
+                <span><?= htmlspecialchars(ticketT('total_tickets')); ?></span>
                 <h3><?= $totalTickets; ?></h3>
-                <small>Demandes enregistrées</small>
+                <small><?= htmlspecialchars(ticketT('registered_requests')); ?></small>
             </div>
+
         </div>
 
         <div class="module-stat-card">
+
             <div class="module-stat-icon orange">
                 <i class="bi bi-exclamation-circle-fill"></i>
             </div>
+
             <div>
-                <span>Tickets ouverts</span>
+                <span><?= htmlspecialchars(ticketT('open_tickets')); ?></span>
                 <h3><?= $totalOuverts; ?></h3>
-                <small>À traiter</small>
+                <small><?= htmlspecialchars(ticketT('to_process')); ?></small>
             </div>
+
         </div>
 
         <div class="module-stat-card">
+
             <div class="module-stat-icon blue">
                 <i class="bi bi-hourglass-split"></i>
             </div>
+
             <div>
-                <span>En cours</span>
+                <span><?= htmlspecialchars(ticketT('in_progress')); ?></span>
                 <h3><?= $totalEnCours; ?></h3>
-                <small>Traitement actif</small>
+                <small><?= htmlspecialchars(ticketT('active_processing')); ?></small>
             </div>
+
         </div>
 
         <div class="module-stat-card">
+
             <div class="module-stat-icon green">
                 <i class="bi bi-check-circle-fill"></i>
             </div>
+
             <div>
-                <span>Résolus</span>
+                <span><?= htmlspecialchars(ticketT('resolved')); ?></span>
                 <h3><?= $totalResolus; ?></h3>
-                <small>Tickets clôturés</small>
+                <small><?= htmlspecialchars(ticketT('closed_tickets')); ?></small>
             </div>
+
         </div>
 
     </div>
@@ -94,50 +304,189 @@ foreach ($tickets as $ticket) {
 
         <form action="<?= BASE_URL ?>" method="GET">
 
-            <input type="hidden" name="page" value="tickets">
+            <input type="hidden"
+                   name="page"
+                   value="tickets">
 
             <div class="row g-3 align-items-end">
 
                 <div class="col-lg-5 col-md-12">
-                    <label class="form-label">Recherche</label>
+
+                    <label class="form-label">
+                        <?= htmlspecialchars(ticketT('search')); ?>
+                    </label>
+
                     <div class="modern-search-input">
+
                         <i class="bi bi-search"></i>
+
                         <input type="text"
                                name="search"
-                               placeholder="Rechercher par titre, utilisateur, statut, priorité..."
-                               value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                               placeholder="<?= htmlspecialchars(ticketT('search_placeholder')); ?>"
+                               value="<?= isset($_GET['search'])
+                                   ? htmlspecialchars($_GET['search'])
+                                   : ''; ?>">
+
                     </div>
+
                 </div>
 
                 <div class="col-lg-2 col-md-6">
-                    <label class="form-label">Priorité</label>
-                    <select class="form-select" disabled>
-                        <option>Toutes</option>
-                        <option>Haute</option>
-                        <option>Moyenne</option>
-                        <option>Basse</option>
+
+                    <label class="form-label">
+                        <?= htmlspecialchars(ticketT('priority')); ?>
+                    </label>
+
+                    <select class="form-select"
+                            name="priorite"
+                            onchange="this.form.submit()">
+
+                        <option value=""
+                            <?= $filtrePriorite === ''
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(
+                                ticketT('all_feminine')
+                            ); ?>
+
+                        </option>
+
+                        <option value="haute"
+                            <?= $filtrePriorite === 'haute'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(
+                                ticketT('priority_high')
+                            ); ?>
+
+                        </option>
+
+                        <option value="moyenne"
+                            <?= $filtrePriorite === 'moyenne'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(
+                                ticketT('priority_medium')
+                            ); ?>
+
+                        </option>
+
+                        <option value="basse"
+                            <?= $filtrePriorite === 'basse'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(
+                                ticketT('priority_low')
+                            ); ?>
+
+                        </option>
+
                     </select>
+
                 </div>
 
                 <div class="col-lg-2 col-md-6">
-                    <label class="form-label">Statut</label>
-                    <select class="form-select" disabled>
-                        <option>Tous</option>
-                        <option>Ouvert</option>
-                        <option>En cours</option>
-                        <option>Résolu</option>
+
+                    <label class="form-label">
+                        <?= htmlspecialchars(ticketT('status')); ?>
+                    </label>
+
+                    <select class="form-select"
+                            name="statut"
+                            onchange="this.form.submit()">
+
+                        <option value=""
+                            <?= $filtreStatut === ''
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(
+                                ticketT('all_masculine')
+                            ); ?>
+
+                        </option>
+
+                        <option value="ouvert"
+                            <?= $filtreStatut === 'ouvert'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(
+                                ticketT('status_open')
+                            ); ?>
+
+                        </option>
+
+                        <option value="en cours"
+                            <?= $filtreStatut === 'en cours'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(
+                                ticketT('status_in_progress')
+                            ); ?>
+
+                        </option>
+
+                        <option value="en attente"
+                            <?= $filtreStatut === 'en attente'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(
+                                ticketT('status_waiting')
+                            ); ?>
+
+                        </option>
+
+                        <option value="resolu"
+                            <?= $filtreStatut === 'resolu'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(
+                                ticketT('status_resolved')
+                            ); ?>
+
+                        </option>
+
+                        <option value="annule"
+                            <?= $filtreStatut === 'annule'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(
+                                ticketT('status_cancelled')
+                            ); ?>
+
+                        </option>
+
                     </select>
+
                 </div>
 
                 <div class="col-lg-3 col-md-12 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-fill">
+
+                    <button type="submit"
+                            class="btn btn-primary flex-fill">
+
                         <i class="bi bi-search"></i>
-                        Rechercher
+                        <?= htmlspecialchars(ticketT('search_button')); ?>
+
                     </button>
 
-                    <a href="<?= BASE_URL ?>?page=tickets" class="btn btn-light border">
+                    <a href="<?= BASE_URL ?>?page=tickets"
+                       class="btn btn-light border"
+                       title="<?= htmlspecialchars(ticketT('reset')); ?>">
+
                         <i class="bi bi-arrow-clockwise"></i>
+
                     </a>
+
                 </div>
 
             </div>
@@ -151,13 +500,24 @@ foreach ($tickets as $ticket) {
         <div class="module-table-header">
 
             <div>
-                <h5>Liste des tickets</h5>
-                <small><?= $totalTickets; ?> ticket(s) trouvé(s)</small>
+                <h5><?= htmlspecialchars(ticketT('ticket_list')); ?></h5>
+
+                <small>
+                    <?= htmlspecialchars(
+                        ticketT(
+                            'tickets_found_cancelled',
+                            [
+                                'count' => $totalTickets,
+                                'cancelled' => $totalAnnules
+                            ]
+                        )
+                    ); ?>
+                </small>
             </div>
 
             <span class="module-chip">
                 <i class="bi bi-headset"></i>
-                Assistance IT
+                <?= htmlspecialchars(ticketT('it_support')); ?>
             </span>
 
         </div>
@@ -167,16 +527,20 @@ foreach ($tickets as $ticket) {
             <table class="table table-hover align-middle modern-table">
 
                 <thead>
+
                 <tr>
-                    <th>ID</th>
-                    <th>Ticket</th>
-                    <th>Demandeur</th>
-                    <th>Priorité</th>
-                    <th>Statut</th>
-                    <th>Moyen</th>
-                    <th>Date création</th>
-                    <th class="text-center">Actions</th>
+                    <th><?= htmlspecialchars(ticketT('id')); ?></th>
+                    <th><?= htmlspecialchars(ticketT('ticket')); ?></th>
+                    <th><?= htmlspecialchars(ticketT('requester')); ?></th>
+                    <th><?= htmlspecialchars(ticketT('priority')); ?></th>
+                    <th><?= htmlspecialchars(ticketT('status')); ?></th>
+                    <th><?= htmlspecialchars(ticketT('communication_method_short')); ?></th>
+                    <th><?= htmlspecialchars(ticketT('creation_date')); ?></th>
+                    <th class="text-center">
+                        <?= htmlspecialchars(ticketT('actions')); ?>
+                    </th>
                 </tr>
+
                 </thead>
 
                 <tbody>
@@ -186,126 +550,301 @@ foreach ($tickets as $ticket) {
                     <?php foreach ($tickets as $ticket): ?>
 
                         <?php
-                        $id = $ticket['id_ticket'] ?? $ticket['ID_TICKET'] ?? '';
-                        $titre = $ticket['titre'] ?? $ticket['TITRE'] ?? '';
-                        $description = $ticket['description'] ?? $ticket['DESCRIPTION'] ?? '';
-                        $priorite = $ticket['priorite'] ?? $ticket['PRIORITE'] ?? '';
-                        $statut = $ticket['statut'] ?? $ticket['STATUT'] ?? '';
-                        $dateCreation = $ticket['date_creation'] ?? $ticket['DATE_CREATION'] ?? '';
-                        $nom = $ticket['nom'] ?? $ticket['NOM'] ?? '';
-                        $prenom = $ticket['prenom'] ?? $ticket['PRENOM'] ?? '';
-                        $moyen = $ticket['moyen'] ?? $ticket['LIBELLE'] ?? '-';
 
-                        $prioriteLower = strtolower($priorite);
-                        $statutLower = strtolower($statut);
+                        $id =
+                            $ticket['id_ticket']
+                            ?? $ticket['ID_TICKET']
+                            ?? '';
 
-                        $initiales = strtoupper(substr($prenom, 0, 1) . substr($nom, 0, 1));
+                        $titre =
+                            $ticket['titre']
+                            ?? $ticket['TITRE']
+                            ?? '';
+
+                        $description =
+                            $ticket['description']
+                            ?? $ticket['DESCRIPTION']
+                            ?? '';
+
+                        $priorite =
+                            $ticket['priorite']
+                            ?? $ticket['PRIORITE']
+                            ?? '';
+
+                        $statut =
+                            $ticket['statut']
+                            ?? $ticket['STATUT']
+                            ?? '';
+
+                        $dateCreation =
+                            $ticket['date_creation']
+                            ?? $ticket['DATE_CREATION']
+                            ?? '';
+
+                        $nom =
+                            $ticket['nom']
+                            ?? $ticket['NOM']
+                            ?? '';
+
+                        $prenom =
+                            $ticket['prenom']
+                            ?? $ticket['PRENOM']
+                            ?? '';
+
+                        $moyen =
+                            $ticket['moyen']
+                            ?? $ticket['LIBELLE']
+                            ?? '-';
+
+                        $prioriteLower =
+                            ticketNormalize((string)$priorite);
+
+                        $statutLower =
+                            ticketNormalize((string)$statut);
+
+                        $ticketAnnule =
+                            $statutLower === 'annule';
+
+                        $initiales = mb_strtoupper(
+                            mb_substr($prenom, 0, 1, 'UTF-8') .
+                            mb_substr($nom, 0, 1, 'UTF-8'),
+                            'UTF-8'
+                        );
+
                         ?>
 
-                        <tr>
+                        <tr class="<?= $ticketAnnule
+                            ? 'ticket-row-cancelled'
+                            : ''; ?>">
 
                             <td>
-                                <span class="table-id">#TKT-<?= htmlspecialchars($id); ?></span>
+
+                                <span class="table-id">
+                                    #TKT-<?= htmlspecialchars($id); ?>
+                                </span>
+
                             </td>
 
                             <td>
+
                                 <div class="ticket-cell">
+
                                     <div class="ticket-icon">
                                         <i class="bi bi-ticket-detailed-fill"></i>
                                     </div>
+
                                     <div>
-                                        <strong><?= htmlspecialchars($titre); ?></strong>
+
+                                        <strong>
+                                            <?= htmlspecialchars($titre); ?>
+                                        </strong>
+
                                         <small>
-                                            <?= htmlspecialchars(mb_strimwidth($description, 0, 55, '...')); ?>
+                                            <?= htmlspecialchars(
+                                                mb_strimwidth(
+                                                    $description,
+                                                    0,
+                                                    55,
+                                                    '...',
+                                                    'UTF-8'
+                                                )
+                                            ); ?>
                                         </small>
+
                                     </div>
+
                                 </div>
+
                             </td>
 
                             <td>
+
                                 <div class="user-cell">
+
                                     <div class="table-avatar">
-                                        <?= htmlspecialchars($initiales ?: 'U'); ?>
+
+                                        <?= htmlspecialchars(
+                                            $initiales ?: 'U'
+                                        ); ?>
+
                                     </div>
+
                                     <div>
-                                        <strong><?= htmlspecialchars($prenom . ' ' . $nom); ?></strong>
-                                        <small>Demandeur</small>
+
+                                        <strong>
+                                            <?= htmlspecialchars(
+                                                trim(
+                                                    $prenom .
+                                                    ' ' .
+                                                    $nom
+                                                )
+                                            ); ?>
+                                        </strong>
+
+                                        <small>
+                                            <?= htmlspecialchars(
+                                                ticketT('requester')
+                                            ); ?>
+                                        </small>
+
                                     </div>
+
                                 </div>
+
                             </td>
 
                             <td>
-                                <?php if ($prioriteLower == 'haute'): ?>
+
+                                <?php if ($prioriteLower === 'haute'): ?>
+
                                     <span class="badge priority-high">
                                         <i class="bi bi-arrow-up-circle-fill"></i>
-                                        Haute
+                                        <?= htmlspecialchars(ticketT('priority_high')); ?>
                                     </span>
-                                <?php elseif ($prioriteLower == 'moyenne'): ?>
+
+                                <?php elseif ($prioriteLower === 'moyenne'): ?>
+
                                     <span class="badge priority-medium">
                                         <i class="bi bi-dash-circle-fill"></i>
-                                        Moyenne
+                                        <?= htmlspecialchars(ticketT('priority_medium')); ?>
                                     </span>
+
                                 <?php else: ?>
+
                                     <span class="badge priority-low">
                                         <i class="bi bi-arrow-down-circle-fill"></i>
-                                        <?= htmlspecialchars($priorite ?: 'Basse'); ?>
+
+                                        <?= htmlspecialchars(
+                                            ticketPriorityLabel(
+                                                (string)$priorite
+                                            )
+                                        ); ?>
+
                                     </span>
+
                                 <?php endif; ?>
+
                             </td>
 
                             <td>
-                                <?php if ($statutLower == 'ouvert'): ?>
+
+                                <?php if ($statutLower === 'ouvert'): ?>
+
                                     <span class="badge ticket-open">
                                         <i class="bi bi-exclamation-circle-fill"></i>
-                                        Ouvert
+                                        <?= htmlspecialchars(ticketT('status_open')); ?>
                                     </span>
-                                <?php elseif ($statutLower == 'en cours'): ?>
+
+                                <?php elseif ($statutLower === 'en cours'): ?>
+
                                     <span class="badge ticket-progress">
                                         <i class="bi bi-hourglass-split"></i>
-                                        En cours
+                                        <?= htmlspecialchars(ticketT('status_in_progress')); ?>
                                     </span>
-                                <?php elseif ($statutLower == 'en attente'): ?>
+
+                                <?php elseif ($statutLower === 'en attente'): ?>
+
                                     <span class="badge ticket-waiting">
                                         <i class="bi bi-clock-fill"></i>
-                                        En attente
+                                        <?= htmlspecialchars(ticketT('status_waiting')); ?>
                                     </span>
-                                <?php elseif ($statutLower == 'résolu' || $statutLower == 'resolu'): ?>
+
+                                <?php elseif ($statutLower === 'resolu'): ?>
+
                                     <span class="badge ticket-done">
                                         <i class="bi bi-check-circle-fill"></i>
-                                        Résolu
+                                        <?= htmlspecialchars(ticketT('status_resolved')); ?>
                                     </span>
+
+                                <?php elseif ($ticketAnnule): ?>
+
+                                    <span class="badge ticket-cancelled">
+                                        <i class="bi bi-x-circle-fill"></i>
+                                        <?= htmlspecialchars(ticketT('status_cancelled')); ?>
+                                    </span>
+
                                 <?php else: ?>
+
                                     <span class="badge bg-secondary">
-                                        <?= htmlspecialchars($statut ?: 'Non défini'); ?>
+
+                                        <?= htmlspecialchars(
+                                            ticketStatusLabel(
+                                                (string)$statut
+                                            )
+                                        ); ?>
+
                                     </span>
+
                                 <?php endif; ?>
+
                             </td>
 
                             <td>
+
                                 <span class="moyen-badge">
                                     <i class="bi bi-chat-dots-fill"></i>
-                                    <?= htmlspecialchars($moyen); ?>
+
+                                    <?= htmlspecialchars(
+                                        ticketCommunicationLabel(
+                                            (string)$moyen
+                                        )
+                                    ); ?>
                                 </span>
+
                             </td>
 
                             <td>
-                                <?= !empty($dateCreation) ? date('d/m/Y H:i', strtotime($dateCreation)) : '-'; ?>
+
+                                <?= !empty($dateCreation)
+                                    ? date(
+                                        'd/m/Y H:i',
+                                        strtotime($dateCreation)
+                                    )
+                                    : '-'; ?>
+
                             </td>
 
                             <td class="text-center">
 
-                                <a href="<?= BASE_URL ?>?page=modifier-ticket&id=<?= $id; ?>"
-                                   class="btn btn-warning btn-sm"
-                                   title="Modifier">
-                                    <i class="bi bi-pencil-square"></i>
-                                </a>
+                                <?php if (!$ticketAnnule): ?>
 
-                                <a href="<?= BASE_URL ?>?page=supprimer-ticket&id=<?= $id; ?>"
-                                   class="btn btn-danger btn-sm"
-                                   title="Supprimer"
-                                   onclick="return confirm('Voulez-vous vraiment supprimer ce ticket ?');">
-                                    <i class="bi bi-trash"></i>
-                                </a>
+                                    <a href="<?= BASE_URL ?>?page=modifier-ticket&id=<?= (int)$id; ?>"
+                                       class="btn btn-warning btn-sm"
+                                       title="<?= htmlspecialchars(ticketT('edit')); ?>">
+
+                                        <i class="bi bi-pencil-square"></i>
+
+                                    </a>
+
+                                    <?php if (
+                                        (int)($_SESSION['id_role'] ?? 0) === 1
+                                    ): ?>
+
+                                        <a href="<?= BASE_URL ?>?page=supprimer-ticket&id=<?= (int)$id; ?>"
+                                           class="btn btn-danger btn-sm"
+                                           title="<?= htmlspecialchars(ticketT('cancel_ticket')); ?>"
+                                           onclick="return confirm('<?= htmlspecialchars(
+                                               ticketT(
+                                                   'cancel_ticket_confirmation'
+                                               ),
+                                               ENT_QUOTES,
+                                               'UTF-8'
+                                           ); ?>');">
+
+                                            <i class="bi bi-x-circle"></i>
+
+                                        </a>
+
+                                    <?php endif; ?>
+
+                                <?php else: ?>
+
+                                    <span class="text-muted small">
+                                        <i class="bi bi-lock-fill"></i>
+                                        <?= htmlspecialchars(ticketT('cancelled_ticket')); ?>
+                                    </span>
+
+                                <?php endif; ?>
 
                             </td>
 
@@ -316,11 +855,18 @@ foreach ($tickets as $ticket) {
                 <?php else: ?>
 
                     <tr>
-                        <td colspan="8" class="text-center py-5 text-muted">
+
+                        <td colspan="8"
+                            class="text-center py-5 text-muted">
+
                             <i class="bi bi-ticket-detailed fs-1"></i>
+
                             <br><br>
-                            Aucun ticket trouvé.
+
+                            <?= htmlspecialchars(ticketT('no_ticket')); ?>
+
                         </td>
+
                     </tr>
 
                 <?php endif; ?>

@@ -3,6 +3,7 @@
 <?php require_once '../app/views/layouts/navbar.php'; ?>
 
 <?php
+
 require_once '../app/core/Auth.php';
 
 $utilisateurs = $utilisateurs ?? [];
@@ -11,6 +12,56 @@ $equipements = $equipements ?? [];
 
 $estEmploye = Auth::estEmploye();
 $idUtilisateurConnecte = Auth::idUtilisateur();
+
+if (!function_exists('ticketT')) {
+    function ticketT(
+        string $key,
+        array $replacements = []
+    ): string {
+        return t(
+            'tickets_module.' . $key,
+            $replacements
+        );
+    }
+}
+
+if (!function_exists('ticketNormalize')) {
+    function ticketNormalize(string $value): string
+    {
+        $value = mb_strtolower(
+            trim($value),
+            'UTF-8'
+        );
+
+        return strtr($value, [
+            'é' => 'e',
+            'è' => 'e',
+            'ê' => 'e',
+            'ë' => 'e',
+            'à' => 'a',
+            'â' => 'a',
+            'î' => 'i',
+            'ï' => 'i',
+            'ô' => 'o',
+            'ù' => 'u',
+            'û' => 'u',
+            'ç' => 'c'
+        ]);
+    }
+}
+
+if (!function_exists('ticketCommunicationLabel')) {
+    function ticketCommunicationLabel(string $value): string
+    {
+        return match (ticketNormalize($value)) {
+            'email', 'e-mail' => ticketT('communication_email'),
+            'telephone' => ticketT('communication_phone'),
+            'presentiel' => ticketT('communication_in_person'),
+            default => $value
+        };
+    }
+}
+
 ?>
 
 <div class="module-page">
@@ -18,10 +69,10 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
     <div class="module-header">
 
         <div>
-            <h2>Créer un ticket</h2>
+            <h2><?= htmlspecialchars(ticketT('create_title')); ?></h2>
 
             <p>
-                Envoyez une nouvelle demande d’assistance au service informatique.
+                <?= htmlspecialchars(ticketT('create_subtitle')); ?>
             </p>
         </div>
 
@@ -29,18 +80,30 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
            class="btn btn-light border">
 
             <i class="bi bi-arrow-left"></i>
-            Retour
+            <?= htmlspecialchars(ticketT('back')); ?>
 
         </a>
 
     </div>
 
+    <?php if (isset($_SESSION['error'])): ?>
+
+        <div class="alert alert-danger">
+
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+
+            <?= htmlspecialchars($_SESSION['error']); ?>
+
+        </div>
+
+        <?php unset($_SESSION['error']); ?>
+
+    <?php endif; ?>
+
     <div class="modern-form-card">
 
         <form action="<?= BASE_URL ?>?page=enregistrer-ticket"
               method="POST">
-
-            <!-- Informations du ticket -->
 
             <div class="form-section-title">
 
@@ -49,10 +112,10 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                 </div>
 
                 <div>
-                    <h5>Informations du ticket</h5>
+                    <h5><?= htmlspecialchars(ticketT('ticket_information')); ?></h5>
 
                     <small>
-                        Décrivez clairement le problème rencontré.
+                        <?= htmlspecialchars(ticketT('describe_problem')); ?>
                     </small>
                 </div>
 
@@ -63,7 +126,7 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                 <div class="col-md-12">
 
                     <label class="form-label">
-                        Titre du ticket
+                        <?= htmlspecialchars(ticketT('ticket_title')); ?>
                     </label>
 
                     <div class="input-with-icon">
@@ -73,7 +136,7 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                         <input type="text"
                                name="titre"
                                class="form-control"
-                               placeholder="Exemple : Ordinateur en panne"
+                               placeholder="<?= htmlspecialchars(ticketT('title_placeholder')); ?>"
                                required>
 
                     </div>
@@ -83,20 +146,18 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                 <div class="col-md-12">
 
                     <label class="form-label">
-                        Description
+                        <?= htmlspecialchars(ticketT('description')); ?>
                     </label>
 
                     <textarea name="description"
                               class="form-control"
                               rows="5"
-                              placeholder="Décrivez le problème rencontré..."
+                              placeholder="<?= htmlspecialchars(ticketT('description_placeholder')); ?>"
                               required></textarea>
 
                 </div>
 
             </div>
-
-            <!-- Équipement concerné -->
 
             <div class="form-section-title mt-5">
 
@@ -105,11 +166,10 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                 </div>
 
                 <div>
-                    <h5>Équipement concerné</h5>
+                    <h5><?= htmlspecialchars(ticketT('concerned_equipment')); ?></h5>
 
                     <small>
-                        Sélectionnez le matériel concerné si le problème est lié
-                        à un équipement.
+                        <?= htmlspecialchars(ticketT('concerned_equipment_help')); ?>
                     </small>
                 </div>
 
@@ -120,7 +180,7 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                 <div class="col-md-6">
 
                     <label class="form-label">
-                        Équipement
+                        <?= htmlspecialchars(ticketT('equipment')); ?>
                     </label>
 
                     <select name="id_equipement"
@@ -130,7 +190,7 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                         <option value=""
                                 data-local="">
 
-                            Aucun équipement précis
+                            <?= htmlspecialchars(ticketT('no_specific_equipment')); ?>
 
                         </option>
 
@@ -160,7 +220,7 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                             $nomLocal =
                                 $equipement['nom_local']
                                 ?? $equipement['NOM_LOCAL']
-                                ?? 'Local non défini';
+                                ?? ticketT('undefined_local');
 
                             $nomEquipement = trim(
                                 $marque . ' ' .
@@ -186,24 +246,22 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                 <div class="col-md-6">
 
                     <label class="form-label">
-                        Local de l’équipement
+                        <?= htmlspecialchars(ticketT('equipment_local')); ?>
                     </label>
 
                     <input type="text"
                            id="local_equipement"
                            class="form-control"
-                           placeholder="Le local s’affichera automatiquement"
+                           placeholder="<?= htmlspecialchars(ticketT('local_auto_placeholder')); ?>"
                            readonly>
 
                     <small class="text-muted">
-                        Le local dépend de l’équipement sélectionné.
+                        <?= htmlspecialchars(ticketT('local_depends_equipment')); ?>
                     </small>
 
                 </div>
 
             </div>
-
-            <!-- Classification -->
 
             <div class="form-section-title mt-5">
 
@@ -212,10 +270,10 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                 </div>
 
                 <div>
-                    <h5>Classification du ticket</h5>
+                    <h5><?= htmlspecialchars(ticketT('ticket_classification')); ?></h5>
 
                     <small>
-                        Choisissez la priorité et le moyen de communication.
+                        <?= htmlspecialchars(ticketT('classification_help')); ?>
                     </small>
                 </div>
 
@@ -226,7 +284,7 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                 <div class="col-md-6">
 
                     <label class="form-label">
-                        Priorité
+                        <?= htmlspecialchars(ticketT('priority')); ?>
                     </label>
 
                     <select name="priorite"
@@ -234,19 +292,19 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                             required>
 
                         <option value="">
-                            Choisir une priorité
+                            <?= htmlspecialchars(ticketT('choose_priority')); ?>
                         </option>
 
                         <option value="Basse">
-                            Basse
+                            <?= htmlspecialchars(ticketT('priority_low')); ?>
                         </option>
 
                         <option value="Moyenne">
-                            Moyenne
+                            <?= htmlspecialchars(ticketT('priority_medium')); ?>
                         </option>
 
                         <option value="Haute">
-                            Haute
+                            <?= htmlspecialchars(ticketT('priority_high')); ?>
                         </option>
 
                     </select>
@@ -256,7 +314,7 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                 <div class="col-md-6">
 
                     <label class="form-label">
-                        Moyen de communication
+                        <?= htmlspecialchars(ticketT('communication_method')); ?>
                     </label>
 
                     <select name="id_moyen"
@@ -264,7 +322,7 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                             required>
 
                         <option value="">
-                            Choisir un moyen
+                            <?= htmlspecialchars(ticketT('choose_method')); ?>
                         </option>
 
                         <?php foreach ($moyens as $moyen): ?>
@@ -278,12 +336,18 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                             $libelle =
                                 $moyen['libelle']
                                 ?? $moyen['LIBELLE']
+                                ?? $moyen['nom_moyen']
+                                ?? $moyen['NOM_MOYEN']
                                 ?? '';
                             ?>
 
                             <option value="<?= htmlspecialchars($idMoyen); ?>">
 
-                                <?= htmlspecialchars($libelle); ?>
+                                <?= htmlspecialchars(
+                                    ticketCommunicationLabel(
+                                        (string)$libelle
+                                    )
+                                ); ?>
 
                             </option>
 
@@ -308,7 +372,7 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                     <div class="col-md-6">
 
                         <label class="form-label">
-                            Demandeur
+                            <?= htmlspecialchars(ticketT('requester')); ?>
                         </label>
 
                         <select name="id_utilisateur"
@@ -316,7 +380,7 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                                 required>
 
                             <option value="">
-                                Choisir un utilisateur
+                                <?= htmlspecialchars(ticketT('choose_user')); ?>
                             </option>
 
                             <?php foreach ($utilisateurs as $utilisateur): ?>
@@ -355,7 +419,7 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                     <div class="col-md-6">
 
                         <label class="form-label">
-                            Statut
+                            <?= htmlspecialchars(ticketT('status')); ?>
                         </label>
 
                         <select name="statut"
@@ -363,19 +427,19 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                                 required>
 
                             <option value="Ouvert">
-                                Ouvert
+                                <?= htmlspecialchars(ticketT('status_open')); ?>
                             </option>
 
                             <option value="En cours">
-                                En cours
+                                <?= htmlspecialchars(ticketT('status_in_progress')); ?>
                             </option>
 
                             <option value="En attente">
-                                En attente
+                                <?= htmlspecialchars(ticketT('status_waiting')); ?>
                             </option>
 
                             <option value="Résolu">
-                                Résolu
+                                <?= htmlspecialchars(ticketT('status_resolved')); ?>
                             </option>
 
                         </select>
@@ -392,7 +456,7 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                    class="btn btn-light border">
 
                     <i class="bi bi-x-circle"></i>
-                    Annuler
+                    <?= htmlspecialchars(ticketT('cancel')); ?>
 
                 </a>
 
@@ -400,7 +464,7 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
                         class="btn btn-primary">
 
                     <i class="bi bi-check-circle"></i>
-                    Créer le ticket
+                    <?= htmlspecialchars(ticketT('create_ticket')); ?>
 
                 </button>
 
@@ -414,8 +478,11 @@ $idUtilisateurConnecte = Auth::idUtilisateur();
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const equipementSelect = document.getElementById('id_equipement');
-    const localInput = document.getElementById('local_equipement');
+    const equipementSelect =
+        document.getElementById('id_equipement');
+
+    const localInput =
+        document.getElementById('local_equipement');
 
     if (!equipementSelect || !localInput) {
         return;
@@ -423,13 +490,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function afficherLocal() {
         const optionSelectionnee =
-            equipementSelect.options[equipementSelect.selectedIndex];
+            equipementSelect.options[
+                equipementSelect.selectedIndex
+            ];
 
         localInput.value =
-            optionSelectionnee.getAttribute('data-local') || '';
+            optionSelectionnee.getAttribute(
+                'data-local'
+            ) || '';
     }
 
-    equipementSelect.addEventListener('change', afficherLocal);
+    equipementSelect.addEventListener(
+        'change',
+        afficherLocal
+    );
 
     afficherLocal();
 });

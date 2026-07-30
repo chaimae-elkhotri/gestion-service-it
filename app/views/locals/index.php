@@ -3,24 +3,91 @@
 <?php require_once '../app/views/layouts/navbar.php'; ?>
 
 <?php
+
 $locals = $locals ?? [];
 
-$totalLocaux = count($locals);
-$totalBureaux = 0;
-$totalSalles = 0;
-$totalAmphis = 0;
-
-foreach ($locals as $local) {
-    $type = strtolower($local['type_local'] ?? $local['TYPE_LOCAL'] ?? '');
-
-    if (strpos($type, 'bureau') !== false) {
-        $totalBureaux++;
-    } elseif (strpos($type, 'salle') !== false) {
-        $totalSalles++;
-    } elseif (strpos($type, 'amphi') !== false) {
-        $totalAmphis++;
+if (!function_exists('localT')) {
+    function localT(
+        string $key,
+        array $replacements = []
+    ): string {
+        return t(
+            'locals_module.' . $key,
+            $replacements
+        );
     }
 }
+
+if (!function_exists('localNormalize')) {
+    function localNormalize(string $value): string
+    {
+        $value = mb_strtolower(trim($value), 'UTF-8');
+
+        return strtr($value, [
+            'é' => 'e',
+            'è' => 'e',
+            'ê' => 'e',
+            'ë' => 'e',
+            'à' => 'a',
+            'â' => 'a',
+            'î' => 'i',
+            'ï' => 'i',
+            'ô' => 'o',
+            'ù' => 'u',
+            'û' => 'u',
+            'ç' => 'c'
+        ]);
+    }
+}
+
+if (!function_exists('localAvailabilityLabel')) {
+    function localAvailabilityLabel(string $value): string
+    {
+        return match (localNormalize($value)) {
+            'disponible' => localT('available'),
+            'occupe' => localT('occupied'),
+            'en maintenance' => localT('maintenance'),
+            'indisponible' => localT('unavailable'),
+            default => $value
+        };
+    }
+}
+
+if (!function_exists('localTypeLabel')) {
+    function localTypeLabel(string $value): string
+    {
+        return match (localNormalize($value)) {
+            'bureau' => localT('type_office'),
+            'salle' => localT('type_room'),
+            'salle informatique' => localT('type_computer_room'),
+            'amphitheatre' => localT('type_amphitheater'),
+            'laboratoire' => localT('type_laboratory'),
+            'service' => localT('type_service'),
+            'autre' => localT('type_other'),
+            default => $value
+        };
+    }
+}
+
+$totalLocaux = count($locals);
+$totalDisponibles = 0;
+$totalOccupes = 0;
+$totalHorsService = 0;
+
+foreach ($locals as $local) {
+    $disponibilite = localNormalize(
+        (string)($local['disponibilite'] ?? '')
+    );
+
+    if ($disponibilite === 'disponible') {
+        $totalDisponibles++;
+    } elseif ($disponibilite === 'occupe') {
+        $totalOccupes++;
+    } else {
+        $totalHorsService++;
+    }
+}
+
 ?>
 
 <div class="module-page">
@@ -28,61 +95,111 @@ foreach ($locals as $local) {
     <div class="module-header">
 
         <div>
-            <h2>Gestion des locaux</h2>
-            <p>Gérez les salles, bureaux et espaces de la FSJES Oujda.</p>
+            <h2><?= htmlspecialchars(localT('management_title')); ?></h2>
+
+            <p>
+                <?= htmlspecialchars(localT('management_subtitle')); ?>
+            </p>
         </div>
 
-        <a href="<?= BASE_URL ?>?page=ajouter-local" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i>
-            Ajouter un local
-        </a>
+        <?php if ((int)($_SESSION['id_role'] ?? 0) === 1): ?>
+
+            <a href="<?= BASE_URL ?>?page=ajouter-local"
+               class="btn btn-primary">
+
+                <i class="bi bi-plus-circle"></i>
+                <?= htmlspecialchars(localT('add_local')); ?>
+
+            </a>
+
+        <?php endif; ?>
 
     </div>
+
+    <?php if (isset($_SESSION['success'])): ?>
+
+        <div class="alert alert-success">
+
+            <i class="bi bi-check-circle-fill me-2"></i>
+
+            <?= htmlspecialchars($_SESSION['success']); ?>
+
+        </div>
+
+        <?php unset($_SESSION['success']); ?>
+
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['error'])): ?>
+
+        <div class="alert alert-danger">
+
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+
+            <?= htmlspecialchars($_SESSION['error']); ?>
+
+        </div>
+
+        <?php unset($_SESSION['error']); ?>
+
+    <?php endif; ?>
 
     <div class="module-stats-grid">
 
         <div class="module-stat-card">
+
             <div class="module-stat-icon brown">
                 <i class="bi bi-building-fill"></i>
             </div>
+
             <div>
-                <span>Total locaux</span>
+                <span><?= htmlspecialchars(localT('total_locals')); ?></span>
                 <h3><?= $totalLocaux; ?></h3>
-                <small>Espaces enregistrés</small>
+                <small><?= htmlspecialchars(localT('registered_spaces')); ?></small>
             </div>
+
         </div>
 
         <div class="module-stat-card">
-            <div class="module-stat-icon blue">
-                <i class="bi bi-pc-display"></i>
-            </div>
-            <div>
-                <span>Salles</span>
-                <h3><?= $totalSalles; ?></h3>
-                <small>Salles informatiques / cours</small>
-            </div>
-        </div>
 
-        <div class="module-stat-card">
             <div class="module-stat-icon green">
-                <i class="bi bi-door-open-fill"></i>
+                <i class="bi bi-check-circle-fill"></i>
             </div>
+
             <div>
-                <span>Bureaux</span>
-                <h3><?= $totalBureaux; ?></h3>
-                <small>Bureaux administratifs</small>
+                <span><?= htmlspecialchars(localT('available_plural')); ?></span>
+                <h3><?= $totalDisponibles; ?></h3>
+                <small><?= htmlspecialchars(localT('currently_free')); ?></small>
             </div>
+
         </div>
 
         <div class="module-stat-card">
+
             <div class="module-stat-icon orange">
-                <i class="bi bi-easel-fill"></i>
+                <i class="bi bi-clock-fill"></i>
             </div>
+
             <div>
-                <span>Amphithéâtres</span>
-                <h3><?= $totalAmphis; ?></h3>
-                <small>Espaces pédagogiques</small>
+                <span><?= htmlspecialchars(localT('occupied_plural')); ?></span>
+                <h3><?= $totalOccupes; ?></h3>
+                <small><?= htmlspecialchars(localT('ongoing_courses_events')); ?></small>
             </div>
+
+        </div>
+
+        <div class="module-stat-card">
+
+            <div class="module-stat-icon blue">
+                <i class="bi bi-tools"></i>
+            </div>
+
+            <div>
+                <span><?= htmlspecialchars(localT('unavailable_plural')); ?></span>
+                <h3><?= $totalHorsService; ?></h3>
+                <small><?= htmlspecialchars(localT('maintenance_or_closure')); ?></small>
+            </div>
+
         </div>
 
     </div>
@@ -91,40 +208,49 @@ foreach ($locals as $local) {
 
         <form action="<?= BASE_URL ?>" method="GET">
 
-            <input type="hidden" name="page" value="locals">
+            <input type="hidden"
+                   name="page"
+                   value="locals">
 
             <div class="row g-3 align-items-end">
 
-                <div class="col-lg-6 col-md-12">
-                    <label class="form-label">Recherche</label>
+                <div class="col-lg-8 col-md-12">
+
+                    <label class="form-label">
+                        <?= htmlspecialchars(localT('search')); ?>
+                    </label>
+
                     <div class="modern-search-input">
+
                         <i class="bi bi-search"></i>
+
                         <input type="text"
                                name="search"
-                               placeholder="Rechercher par nom ou type de local..."
-                               value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                               placeholder="<?= htmlspecialchars(localT('search_placeholder')); ?>"
+                               value="<?= htmlspecialchars($_GET['search'] ?? ''); ?>">
+
                     </div>
+
                 </div>
 
-                <div class="col-lg-3 col-md-6">
-                    <label class="form-label">Type local</label>
-                    <select class="form-select" disabled>
-                        <option>Tous les types</option>
-                        <option>Bureau</option>
-                        <option>Salle</option>
-                        <option>Amphi</option>
-                    </select>
-                </div>
+                <div class="col-lg-4 col-md-12 d-flex gap-2">
 
-                <div class="col-lg-3 col-md-6 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-fill">
+                    <button type="submit"
+                            class="btn btn-primary flex-fill">
+
                         <i class="bi bi-search"></i>
-                        Rechercher
+                        <?= htmlspecialchars(localT('search_button')); ?>
+
                     </button>
 
-                    <a href="<?= BASE_URL ?>?page=locals" class="btn btn-light border">
+                    <a href="<?= BASE_URL ?>?page=locals"
+                       class="btn btn-light border"
+                       title="<?= htmlspecialchars(localT('reset')); ?>">
+
                         <i class="bi bi-arrow-clockwise"></i>
+
                     </a>
+
                 </div>
 
             </div>
@@ -138,14 +264,25 @@ foreach ($locals as $local) {
         <div class="module-table-header">
 
             <div>
-                <h5>Liste des locaux</h5>
-                <small><?= $totalLocaux; ?> local(aux) trouvé(s)</small>
+                <h5><?= htmlspecialchars(localT('local_list')); ?></h5>
+
+                <small>
+                    <?= htmlspecialchars(
+                        localT(
+                            'locals_found',
+                            ['count' => $totalLocaux]
+                        )
+                    ); ?>
+                </small>
             </div>
 
-            <span class="module-chip">
-                <i class="bi bi-building"></i>
-                Espaces FSJES
-            </span>
+            <a href="<?= BASE_URL ?>?page=occupations-locaux"
+               class="btn btn-outline-primary btn-sm">
+
+                <i class="bi bi-calendar3"></i>
+                <?= htmlspecialchars(localT('general_schedule')); ?>
+
+            </a>
 
         </div>
 
@@ -154,13 +291,18 @@ foreach ($locals as $local) {
             <table class="table table-hover align-middle modern-table">
 
                 <thead>
+
                 <tr>
-                    <th>ID</th>
-                    <th>Local</th>
-                    <th>Type</th>
-                    <th>Description</th>
-                    <th class="text-center">Actions</th>
+                    <th><?= htmlspecialchars(localT('id')); ?></th>
+                    <th><?= htmlspecialchars(localT('local')); ?></th>
+                    <th><?= htmlspecialchars(localT('type')); ?></th>
+                    <th><?= htmlspecialchars(localT('availability')); ?></th>
+                    <th><?= htmlspecialchars(localT('details')); ?></th>
+                    <th class="text-center">
+                        <?= htmlspecialchars(localT('actions')); ?>
+                    </th>
                 </tr>
+
                 </thead>
 
                 <tbody>
@@ -170,75 +312,215 @@ foreach ($locals as $local) {
                     <?php foreach ($locals as $local): ?>
 
                         <?php
-                        $id = $local['id_local'] ?? $local['ID_LOCAL'] ?? '';
-                        $nomLocal = $local['nom_local'] ?? $local['NOM_LOCAL'] ?? '';
-                        $typeLocal = $local['type_local'] ?? $local['TYPE_LOCAL'] ?? '';
 
-                        $typeLower = strtolower($typeLocal);
+                        $id =
+                            $local['id_local']
+                            ?? $local['ID_LOCAL']
+                            ?? '';
 
-                        if (strpos($typeLower, 'bureau') !== false) {
-                            $icon = 'bi-door-open-fill';
-                            $badgeClass = 'local-type-bureau';
-                            $description = 'Bureau administratif';
-                        } elseif (strpos($typeLower, 'amphi') !== false) {
-                            $icon = 'bi-easel-fill';
-                            $badgeClass = 'local-type-amphi';
-                            $description = 'Amphithéâtre / espace pédagogique';
-                        } elseif (strpos($typeLower, 'salle') !== false) {
-                            $icon = 'bi-pc-display';
-                            $badgeClass = 'local-type-salle';
-                            $description = 'Salle informatique ou salle de cours';
+                        $nomLocal =
+                            $local['nom_local']
+                            ?? $local['NOM_LOCAL']
+                            ?? '';
+
+                        $typeLocal =
+                            $local['type_local']
+                            ?? $local['TYPE_LOCAL']
+                            ?? '';
+
+                        $disponibilite =
+                            $local['disponibilite']
+                            ?? 'Disponible';
+
+                        $occupationActuelle =
+                            $local['occupation_actuelle']
+                            ?? '';
+
+                        $dateFinOccupation =
+                            $local['date_fin_occupation']
+                            ?? '';
+
+                        $disponibiliteLower =
+                            localNormalize((string)$disponibilite);
+
+                        if ($disponibiliteLower === 'disponible') {
+                            $badgeClass =
+                                'bg-success-subtle text-success border border-success-subtle';
+
+                            $iconDisponibilite =
+                                'bi-check-circle-fill';
+                        } elseif ($disponibiliteLower === 'occupe') {
+                            $badgeClass =
+                                'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
+
+                            $iconDisponibilite =
+                                'bi-clock-fill';
+                        } elseif ($disponibiliteLower === 'en maintenance') {
+                            $badgeClass =
+                                'bg-danger-subtle text-danger border border-danger-subtle';
+
+                            $iconDisponibilite =
+                                'bi-tools';
                         } else {
-                            $icon = 'bi-building-fill';
-                            $badgeClass = 'local-type-default';
-                            $description = 'Espace de l’établissement';
+                            $badgeClass =
+                                'bg-secondary-subtle text-secondary border';
+
+                            $iconDisponibilite =
+                                'bi-slash-circle-fill';
                         }
+
                         ?>
 
                         <tr>
 
                             <td>
-                                <span class="table-id">#LOC-<?= htmlspecialchars($id); ?></span>
+                                <span class="table-id">
+                                    #LOC-<?= htmlspecialchars($id); ?>
+                                </span>
                             </td>
 
                             <td>
+
                                 <div class="local-cell">
+
                                     <div class="local-icon">
-                                        <i class="bi <?= $icon; ?>"></i>
+                                        <i class="bi bi-building-fill"></i>
                                     </div>
+
                                     <div>
-                                        <strong><?= htmlspecialchars($nomLocal); ?></strong>
-                                        <small>Local FSJES Oujda</small>
+
+                                        <strong>
+                                            <?= htmlspecialchars($nomLocal); ?>
+                                        </strong>
+
+                                        <small>FSJES Oujda</small>
+
                                     </div>
+
                                 </div>
+
                             </td>
 
                             <td>
-                                <span class="badge <?= $badgeClass; ?>">
-                                    <?= htmlspecialchars($typeLocal ?: 'Non défini'); ?>
+
+                                <span class="badge bg-light text-dark border">
+
+                                    <?= htmlspecialchars(
+                                        $typeLocal
+                                            ? localTypeLabel((string)$typeLocal)
+                                            : localT('undefined')
+                                    ); ?>
+
                                 </span>
+
                             </td>
 
                             <td>
-                                <span class="local-description">
-                                    <?= htmlspecialchars($description); ?>
+
+                                <span class="badge rounded-pill <?= $badgeClass; ?>">
+
+                                    <i class="bi <?= $iconDisponibilite; ?>"></i>
+
+                                    <?= htmlspecialchars(
+                                        localAvailabilityLabel(
+                                            (string)$disponibilite
+                                        )
+                                    ); ?>
+
                                 </span>
+
+                            </td>
+
+                            <td>
+
+                                <?php if ($disponibiliteLower === 'occupe'): ?>
+
+                                    <strong>
+                                        <?= htmlspecialchars(
+                                            $occupationActuelle
+                                                ?: localT('current_occupation')
+                                        ); ?>
+                                    </strong>
+
+                                    <?php if (!empty($dateFinOccupation)): ?>
+
+                                        <small class="d-block text-muted">
+
+                                            <?= htmlspecialchars(localT('available_from')); ?>
+
+                                            <?= date(
+                                                'd/m/Y H:i',
+                                                strtotime($dateFinOccupation)
+                                            ); ?>
+
+                                        </small>
+
+                                    <?php endif; ?>
+
+                                <?php elseif ($disponibiliteLower === 'en maintenance'): ?>
+
+                                    <span class="text-danger">
+                                        <?= htmlspecialchars(localT('local_in_maintenance')); ?>
+                                    </span>
+
+                                <?php elseif ($disponibiliteLower === 'indisponible'): ?>
+
+                                    <span class="text-secondary">
+                                        <?= htmlspecialchars(localT('temporarily_unavailable')); ?>
+                                    </span>
+
+                                <?php else: ?>
+
+                                    <span class="text-success">
+                                        <?= htmlspecialchars(localT('currently_available')); ?>
+                                    </span>
+
+                                <?php endif; ?>
+
                             </td>
 
                             <td class="text-center">
 
-                                <a href="<?= BASE_URL ?>?page=modifier-local&id=<?= $id; ?>"
-                                   class="btn btn-warning btn-sm"
-                                   title="Modifier">
-                                    <i class="bi bi-pencil-square"></i>
+                                <a href="<?= BASE_URL ?>?page=occupations-locaux&id_local=<?= (int)$id; ?>"
+                                   class="btn btn-info btn-sm"
+                                   title="<?= htmlspecialchars(localT('view_schedule')); ?>">
+
+                                    <i class="bi bi-calendar3"></i>
+
                                 </a>
 
-                                <a href="<?= BASE_URL ?>?page=supprimer-local&id=<?= $id; ?>"
-                                   class="btn btn-danger btn-sm"
-                                   title="Supprimer"
-                                   onclick="return confirm('Voulez-vous vraiment supprimer ce local ?');">
-                                    <i class="bi bi-trash"></i>
-                                </a>
+                                <?php if ((int)($_SESSION['id_role'] ?? 0) === 1): ?>
+
+                                    <a href="<?= BASE_URL ?>?page=ajouter-occupation-local&id_local=<?= (int)$id; ?>"
+                                       class="btn btn-success btn-sm"
+                                       title="<?= htmlspecialchars(localT('add_occupation')); ?>">
+
+                                        <i class="bi bi-calendar-plus"></i>
+
+                                    </a>
+
+                                    <a href="<?= BASE_URL ?>?page=modifier-local&id=<?= (int)$id; ?>"
+                                       class="btn btn-warning btn-sm"
+                                       title="<?= htmlspecialchars(localT('edit')); ?>">
+
+                                        <i class="bi bi-pencil-square"></i>
+
+                                    </a>
+
+                                    <a href="<?= BASE_URL ?>?page=supprimer-local&id=<?= (int)$id; ?>"
+                                       class="btn btn-danger btn-sm"
+                                       title="<?= htmlspecialchars(localT('delete')); ?>"
+                                       onclick="return confirm('<?= htmlspecialchars(
+                                           localT('delete_confirmation'),
+                                           ENT_QUOTES,
+                                           'UTF-8'
+                                       ); ?>');">
+
+                                        <i class="bi bi-trash"></i>
+
+                                    </a>
+
+                                <?php endif; ?>
 
                             </td>
 
@@ -249,11 +531,18 @@ foreach ($locals as $local) {
                 <?php else: ?>
 
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">
+
+                        <td colspan="6"
+                            class="text-center py-5 text-muted">
+
                             <i class="bi bi-building fs-1"></i>
+
                             <br><br>
-                            Aucun local trouvé.
+
+                            <?= htmlspecialchars(localT('no_local')); ?>
+
                         </td>
+
                     </tr>
 
                 <?php endif; ?>

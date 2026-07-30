@@ -3,17 +3,95 @@
 <?php require_once '../app/views/layouts/navbar.php'; ?>
 
 <?php
+
 $ticket = $ticket ?? [];
 $utilisateurs = $utilisateurs ?? [];
 $moyens = $moyens ?? [];
 
-$id = $ticket['id_ticket'] ?? $ticket['ID_TICKET'] ?? '';
-$titre = $ticket['titre'] ?? $ticket['TITRE'] ?? '';
-$description = $ticket['description'] ?? $ticket['DESCRIPTION'] ?? '';
-$priorite = $ticket['priorite'] ?? $ticket['PRIORITE'] ?? 'Moyenne';
-$statut = $ticket['statut'] ?? $ticket['STATUT'] ?? 'Ouvert';
-$idUtilisateurTicket = $ticket['id_utilisateur'] ?? $ticket['ID_UTILISATEUR'] ?? '';
-$idMoyenTicket = $ticket['id_moyen'] ?? $ticket['ID_MOYEN'] ?? '';
+$id =
+    $ticket['id_ticket']
+    ?? $ticket['ID_TICKET']
+    ?? '';
+
+$titre =
+    $ticket['titre']
+    ?? $ticket['TITRE']
+    ?? '';
+
+$description =
+    $ticket['description']
+    ?? $ticket['DESCRIPTION']
+    ?? '';
+
+$priorite =
+    $ticket['priorite']
+    ?? $ticket['PRIORITE']
+    ?? 'Moyenne';
+
+$statut =
+    $ticket['statut']
+    ?? $ticket['STATUT']
+    ?? 'Ouvert';
+
+$idUtilisateurTicket =
+    $ticket['id_utilisateur']
+    ?? $ticket['ID_UTILISATEUR']
+    ?? '';
+
+$idMoyenTicket =
+    $ticket['id_moyen']
+    ?? $ticket['ID_MOYEN']
+    ?? '';
+
+if (!function_exists('ticketT')) {
+    function ticketT(
+        string $key,
+        array $replacements = []
+    ): string {
+        return t(
+            'tickets_module.' . $key,
+            $replacements
+        );
+    }
+}
+
+if (!function_exists('ticketNormalize')) {
+    function ticketNormalize(string $value): string
+    {
+        $value = mb_strtolower(
+            trim($value),
+            'UTF-8'
+        );
+
+        return strtr($value, [
+            'é' => 'e',
+            'è' => 'e',
+            'ê' => 'e',
+            'ë' => 'e',
+            'à' => 'a',
+            'â' => 'a',
+            'î' => 'i',
+            'ï' => 'i',
+            'ô' => 'o',
+            'ù' => 'u',
+            'û' => 'u',
+            'ç' => 'c'
+        ]);
+    }
+}
+
+if (!function_exists('ticketCommunicationLabel')) {
+    function ticketCommunicationLabel(string $value): string
+    {
+        return match (ticketNormalize($value)) {
+            'email', 'e-mail' => ticketT('communication_email'),
+            'telephone' => ticketT('communication_phone'),
+            'presentiel' => ticketT('communication_in_person'),
+            default => $value
+        };
+    }
+}
+
 ?>
 
 <div class="module-page">
@@ -21,160 +99,364 @@ $idMoyenTicket = $ticket['id_moyen'] ?? $ticket['ID_MOYEN'] ?? '';
     <div class="module-header">
 
         <div>
-            <h2>Modifier un ticket</h2>
-            <p>Mettez à jour les informations de la demande d’assistance.</p>
+            <h2><?= htmlspecialchars(ticketT('edit_title')); ?></h2>
+
+            <p>
+                <?= htmlspecialchars(ticketT('edit_subtitle')); ?>
+            </p>
         </div>
 
-        <a href="<?= BASE_URL ?>?page=tickets" class="btn btn-light border">
+        <a href="<?= BASE_URL ?>?page=tickets"
+           class="btn btn-light border">
+
             <i class="bi bi-arrow-left"></i>
-            Retour
+            <?= htmlspecialchars(ticketT('back')); ?>
+
         </a>
 
     </div>
 
+    <?php if (isset($_SESSION['error'])): ?>
+
+        <div class="alert alert-danger">
+
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+
+            <?= htmlspecialchars($_SESSION['error']); ?>
+
+        </div>
+
+        <?php unset($_SESSION['error']); ?>
+
+    <?php endif; ?>
+
     <div class="modern-form-card">
 
-        <form action="<?= BASE_URL ?>?page=mettre-a-jour-ticket&id=<?= htmlspecialchars($id); ?>" method="POST">
+        <form action="<?= BASE_URL ?>?page=mettre-a-jour-ticket&id=<?= (int)$id; ?>"
+              method="POST">
 
-            <input type="hidden" name="id_ticket" value="<?= htmlspecialchars($id); ?>">
+            <input type="hidden"
+                   name="id_ticket"
+                   value="<?= htmlspecialchars($id); ?>">
 
             <div class="form-section-title">
+
                 <div class="form-section-icon">
                     <i class="bi bi-pencil-square"></i>
                 </div>
+
                 <div>
-                    <h5>Informations du ticket</h5>
-                    <small>Modifiez le titre, la description, la priorité et le statut.</small>
+                    <h5><?= htmlspecialchars(ticketT('ticket_information')); ?></h5>
+
+                    <small>
+                        <?= htmlspecialchars(ticketT('edit_information_help')); ?>
+                    </small>
                 </div>
+
             </div>
 
             <div class="row g-4">
 
                 <div class="col-md-6">
-                    <label class="form-label">Titre</label>
+
+                    <label class="form-label">
+                        <?= htmlspecialchars(ticketT('title')); ?>
+                    </label>
+
                     <div class="input-with-icon">
+
                         <i class="bi bi-pencil-square"></i>
+
                         <input type="text"
                                name="titre"
                                class="form-control"
                                value="<?= htmlspecialchars($titre); ?>"
                                required>
+
                     </div>
+
                 </div>
 
                 <div class="col-md-3">
-                    <label class="form-label">Priorité</label>
-                    <select name="priorite" class="form-select" required>
-                        <option value="Basse" <?= ($priorite == 'Basse') ? 'selected' : ''; ?>>Basse</option>
-                        <option value="Moyenne" <?= ($priorite == 'Moyenne') ? 'selected' : ''; ?>>Moyenne</option>
-                        <option value="Haute" <?= ($priorite == 'Haute') ? 'selected' : ''; ?>>Haute</option>
+
+                    <label class="form-label">
+                        <?= htmlspecialchars(ticketT('priority')); ?>
+                    </label>
+
+                    <select name="priorite"
+                            class="form-select"
+                            required>
+
+                        <option value="Basse"
+                            <?= $priorite === 'Basse'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(ticketT('priority_low')); ?>
+
+                        </option>
+
+                        <option value="Moyenne"
+                            <?= $priorite === 'Moyenne'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(ticketT('priority_medium')); ?>
+
+                        </option>
+
+                        <option value="Haute"
+                            <?= $priorite === 'Haute'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(ticketT('priority_high')); ?>
+
+                        </option>
+
                     </select>
+
                 </div>
 
                 <div class="col-md-3">
-                    <label class="form-label">Statut</label>
-                    <select name="statut" class="form-select" required>
-                        <option value="Ouvert" <?= ($statut == 'Ouvert') ? 'selected' : ''; ?>>Ouvert</option>
-                        <option value="En cours" <?= ($statut == 'En cours') ? 'selected' : ''; ?>>En cours</option>
-                        <option value="En attente" <?= ($statut == 'En attente') ? 'selected' : ''; ?>>En attente</option>
-                        <option value="Résolu" <?= ($statut == 'Résolu') ? 'selected' : ''; ?>>Résolu</option>
+
+                    <label class="form-label">
+                        <?= htmlspecialchars(ticketT('status')); ?>
+                    </label>
+
+                    <select name="statut"
+                            class="form-select"
+                            required>
+
+                        <option value="Ouvert"
+                            <?= $statut === 'Ouvert'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(ticketT('status_open')); ?>
+
+                        </option>
+
+                        <option value="En cours"
+                            <?= $statut === 'En cours'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(ticketT('status_in_progress')); ?>
+
+                        </option>
+
+                        <option value="En attente"
+                            <?= $statut === 'En attente'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(ticketT('status_waiting')); ?>
+
+                        </option>
+
+                        <option value="Résolu"
+                            <?= $statut === 'Résolu'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(ticketT('status_resolved')); ?>
+
+                        </option>
+
                     </select>
+
                 </div>
 
                 <div class="col-md-12">
-                    <label class="form-label">Description</label>
+
+                    <label class="form-label">
+                        <?= htmlspecialchars(ticketT('description')); ?>
+                    </label>
+
                     <div class="textarea-with-icon">
+
                         <i class="bi bi-card-text"></i>
+
                         <textarea name="description"
                                   class="form-control"
                                   rows="5"
                                   required><?= htmlspecialchars($description); ?></textarea>
+
                     </div>
+
                 </div>
 
             </div>
 
             <div class="form-section-title mt-5">
+
                 <div class="form-section-icon">
                     <i class="bi bi-person-lines-fill"></i>
                 </div>
+
                 <div>
-                    <h5>Demandeur et moyen de communication</h5>
-                    <small>Modifiez l’utilisateur demandeur et le canal utilisé.</small>
+                    <h5>
+                        <?= htmlspecialchars(
+                            ticketT('requester_and_method')
+                        ); ?>
+                    </h5>
+
+                    <small>
+                        <?= htmlspecialchars(
+                            ticketT('edit_requester_method_help')
+                        ); ?>
+                    </small>
                 </div>
+
             </div>
 
             <div class="row g-4">
 
                 <div class="col-md-6">
-                    <label class="form-label">Utilisateur demandeur</label>
-                    <select name="id_utilisateur" class="form-select" required>
 
-                        <option value="">Choisir un utilisateur</option>
+                    <label class="form-label">
+                        <?= htmlspecialchars(ticketT('requesting_user')); ?>
+                    </label>
+
+                    <select name="id_utilisateur"
+                            class="form-select"
+                            required>
+
+                        <option value="">
+                            <?= htmlspecialchars(ticketT('choose_user')); ?>
+                        </option>
 
                         <?php foreach ($utilisateurs as $user): ?>
 
                             <?php
-                            $idUtilisateur = $user['id_utilisateur'] ?? $user['ID_UTILISATEUR'] ?? '';
-                            $nom = $user['nom'] ?? $user['NOM'] ?? '';
-                            $prenom = $user['prenom'] ?? $user['PRENOM'] ?? '';
+                            $idUtilisateur =
+                                $user['id_utilisateur']
+                                ?? $user['ID_UTILISATEUR']
+                                ?? '';
+
+                            $nom =
+                                $user['nom']
+                                ?? $user['NOM']
+                                ?? '';
+
+                            $prenom =
+                                $user['prenom']
+                                ?? $user['PRENOM']
+                                ?? '';
                             ?>
 
                             <option value="<?= htmlspecialchars($idUtilisateur); ?>"
-                                <?= ($idUtilisateur == $idUtilisateurTicket) ? 'selected' : ''; ?>>
-                                <?= htmlspecialchars(trim($prenom . ' ' . $nom)); ?>
+                                <?= $idUtilisateur == $idUtilisateurTicket
+                                    ? 'selected'
+                                    : ''; ?>>
+
+                                <?= htmlspecialchars(
+                                    trim($prenom . ' ' . $nom)
+                                ); ?>
+
                             </option>
 
                         <?php endforeach; ?>
 
                     </select>
+
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label">Moyen de communication</label>
-                    <select name="id_moyen" class="form-select" required>
 
-                        <option value="">Choisir un moyen</option>
+                    <label class="form-label">
+                        <?= htmlspecialchars(ticketT('communication_method')); ?>
+                    </label>
+
+                    <select name="id_moyen"
+                            class="form-select"
+                            required>
+
+                        <option value="">
+                            <?= htmlspecialchars(ticketT('choose_method')); ?>
+                        </option>
 
                         <?php if (!empty($moyens)): ?>
 
                             <?php foreach ($moyens as $moyen): ?>
 
                                 <?php
-                                $idMoyen = $moyen['id_moyen'] ?? $moyen['ID_MOYEN'] ?? '';
-                                $libelle = $moyen['libelle'] ?? $moyen['LIBELLE'] ?? $moyen['nom_moyen'] ?? $moyen['NOM_MOYEN'] ?? '';
+                                $idMoyen =
+                                    $moyen['id_moyen']
+                                    ?? $moyen['ID_MOYEN']
+                                    ?? '';
+
+                                $libelle =
+                                    $moyen['libelle']
+                                    ?? $moyen['LIBELLE']
+                                    ?? $moyen['nom_moyen']
+                                    ?? $moyen['NOM_MOYEN']
+                                    ?? '';
                                 ?>
 
                                 <option value="<?= htmlspecialchars($idMoyen); ?>"
-                                    <?= ($idMoyen == $idMoyenTicket) ? 'selected' : ''; ?>>
-                                    <?= htmlspecialchars($libelle); ?>
+                                    <?= $idMoyen == $idMoyenTicket
+                                        ? 'selected'
+                                        : ''; ?>>
+
+                                    <?= htmlspecialchars(
+                                        ticketCommunicationLabel(
+                                            (string)$libelle
+                                        )
+                                    ); ?>
+
                                 </option>
 
                             <?php endforeach; ?>
 
                         <?php else: ?>
 
-                            <option value="1" <?= ($idMoyenTicket == 1) ? 'selected' : ''; ?>>Email</option>
-                            <option value="2" <?= ($idMoyenTicket == 2) ? 'selected' : ''; ?>>Téléphone</option>
-                            <option value="3" <?= ($idMoyenTicket == 3) ? 'selected' : ''; ?>>Présentiel</option>
+                            <option value="1"
+                                <?= $idMoyenTicket == 1 ? 'selected' : ''; ?>>
+
+                                <?= htmlspecialchars(ticketT('communication_email')); ?>
+
+                            </option>
+
+                            <option value="2"
+                                <?= $idMoyenTicket == 2 ? 'selected' : ''; ?>>
+
+                                <?= htmlspecialchars(ticketT('communication_phone')); ?>
+
+                            </option>
+
+                            <option value="3"
+                                <?= $idMoyenTicket == 3 ? 'selected' : ''; ?>>
+
+                                <?= htmlspecialchars(ticketT('communication_in_person')); ?>
+
+                            </option>
 
                         <?php endif; ?>
 
                     </select>
+
                 </div>
 
             </div>
 
             <div class="form-actions">
 
-                <a href="<?= BASE_URL ?>?page=tickets" class="btn btn-light border">
+                <a href="<?= BASE_URL ?>?page=tickets"
+                   class="btn btn-light border">
+
                     <i class="bi bi-x-circle"></i>
-                    Annuler
+                    <?= htmlspecialchars(ticketT('cancel')); ?>
+
                 </a>
 
-                <button type="submit" class="btn btn-primary">
+                <button type="submit"
+                        class="btn btn-primary">
+
                     <i class="bi bi-check-circle"></i>
-                    Mettre à jour
+                    <?= htmlspecialchars(ticketT('update')); ?>
+
                 </button>
 
             </div>

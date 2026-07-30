@@ -3,11 +3,51 @@
 <?php require_once '../app/views/layouts/navbar.php'; ?>
 
 <?php
+
 $local = $local ?? [];
 
-$id = $local['id_local'] ?? $local['ID_LOCAL'] ?? '';
-$nomLocal = $local['nom_local'] ?? $local['NOM_LOCAL'] ?? '';
-$typeLocal = $local['type_local'] ?? $local['TYPE_LOCAL'] ?? '';
+$id =
+    $local['id_local']
+    ?? $local['ID_LOCAL']
+    ?? '';
+
+$nomLocal =
+    $local['nom_local']
+    ?? $local['NOM_LOCAL']
+    ?? '';
+
+$typeLocal =
+    $local['type_local']
+    ?? $local['TYPE_LOCAL']
+    ?? '';
+
+$statutGeneral =
+    $local['statut_general']
+    ?? $local['STATUT_GENERAL']
+    ?? 'Actif';
+
+if (!function_exists('localT')) {
+    function localT(
+        string $key,
+        array $replacements = []
+    ): string {
+        return t(
+            'locals_module.' . $key,
+            $replacements
+        );
+    }
+}
+
+$typesLocaux = [
+    'Bureau' => localT('type_office'),
+    'Salle' => localT('type_room'),
+    'Salle informatique' => localT('type_computer_room'),
+    'Amphithéâtre' => localT('type_amphitheater'),
+    'Laboratoire' => localT('type_laboratory'),
+    'Service' => localT('type_service'),
+    'Autre' => localT('type_other')
+];
+
 ?>
 
 <div class="module-page">
@@ -15,112 +55,172 @@ $typeLocal = $local['type_local'] ?? $local['TYPE_LOCAL'] ?? '';
     <div class="module-header">
 
         <div>
-            <h2>Modifier un local</h2>
-            <p>Mettez à jour les informations du local sélectionné.</p>
+            <h2><?= htmlspecialchars(localT('edit_title')); ?></h2>
+
+            <p>
+                <?= htmlspecialchars(localT('edit_subtitle')); ?>
+            </p>
         </div>
 
-        <a href="<?= BASE_URL ?>?page=locals" class="btn btn-light border">
+        <a href="<?= BASE_URL ?>?page=locals"
+           class="btn btn-light border">
+
             <i class="bi bi-arrow-left"></i>
-            Retour
+            <?= htmlspecialchars(localT('back')); ?>
+
         </a>
 
     </div>
 
+    <?php if (isset($_SESSION['error'])): ?>
+
+        <div class="alert alert-danger">
+
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+
+            <?= htmlspecialchars($_SESSION['error']); ?>
+
+        </div>
+
+        <?php unset($_SESSION['error']); ?>
+
+    <?php endif; ?>
+
     <div class="modern-form-card">
 
-        <form action="<?= BASE_URL ?>?page=mettre-a-jour-local&id=<?= htmlspecialchars($id); ?>" method="POST">
+        <form action="<?= BASE_URL ?>?page=mettre-a-jour-local"
+              method="POST">
 
-            <input type="hidden" name="id_local" value="<?= htmlspecialchars($id); ?>">
+            <input type="hidden"
+                   name="id_local"
+                   value="<?= htmlspecialchars($id); ?>">
 
             <div class="form-section-title">
+
                 <div class="form-section-icon">
                     <i class="bi bi-pencil-square"></i>
                 </div>
+
                 <div>
-                    <h5>Informations du local</h5>
-                    <small>Modifiez le nom et le type du local.</small>
+                    <h5><?= htmlspecialchars(localT('local_information')); ?></h5>
+
+                    <small>
+                        <?= htmlspecialchars(localT('edit_information_help')); ?>
+                    </small>
                 </div>
+
             </div>
 
             <div class="row g-4">
 
-                <div class="col-md-6">
-                    <label class="form-label">Nom du local</label>
+                <div class="col-md-4">
+
+                    <label class="form-label">
+                        <?= htmlspecialchars(localT('local_name')); ?>
+                    </label>
+
                     <div class="input-with-icon">
+
                         <i class="bi bi-door-open"></i>
+
                         <input type="text"
                                name="nom_local"
                                class="form-control"
                                value="<?= htmlspecialchars($nomLocal); ?>"
                                required>
+
                     </div>
+
                 </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">Type du local</label>
-                    <select name="type_local" class="form-select" required>
-                        <option value="">Choisir un type</option>
+                <div class="col-md-4">
 
-                        <option value="Bureau" <?= ($typeLocal == 'Bureau') ? 'selected' : ''; ?>>
-                            Bureau
-                        </option>
+                    <label class="form-label">
+                        <?= htmlspecialchars(localT('local_type')); ?>
+                    </label>
 
-                        <option value="Salle" <?= ($typeLocal == 'Salle') ? 'selected' : ''; ?>>
-                            Salle
-                        </option>
+                    <select name="type_local"
+                            class="form-select"
+                            required>
 
-                        <option value="Salle informatique" <?= ($typeLocal == 'Salle informatique') ? 'selected' : ''; ?>>
-                            Salle informatique
-                        </option>
+                        <?php foreach ($typesLocaux as $value => $label): ?>
 
-                        <option value="Amphithéâtre" <?= ($typeLocal == 'Amphithéâtre') ? 'selected' : ''; ?>>
-                            Amphithéâtre
-                        </option>
+                            <option value="<?= htmlspecialchars($value); ?>"
+                                <?= $typeLocal === $value ? 'selected' : ''; ?>>
 
-                        <option value="Laboratoire" <?= ($typeLocal == 'Laboratoire') ? 'selected' : ''; ?>>
-                            Laboratoire
-                        </option>
+                                <?= htmlspecialchars($label); ?>
 
-                        <option value="Service" <?= ($typeLocal == 'Service') ? 'selected' : ''; ?>>
-                            Service
-                        </option>
+                            </option>
 
-                        <option value="Autre" <?= ($typeLocal == 'Autre') ? 'selected' : ''; ?>>
-                            Autre
-                        </option>
+                        <?php endforeach; ?>
+
                     </select>
+
+                </div>
+
+                <div class="col-md-4">
+
+                    <label class="form-label">
+                        <?= htmlspecialchars(localT('general_status')); ?>
+                    </label>
+
+                    <select name="statut_general"
+                            class="form-select"
+                            required>
+
+                        <option value="Actif"
+                            <?= $statutGeneral === 'Actif' ? 'selected' : ''; ?>>
+
+                            <?= htmlspecialchars(localT('status_active')); ?>
+
+                        </option>
+
+                        <option value="Maintenance"
+                            <?= $statutGeneral === 'Maintenance' ? 'selected' : ''; ?>>
+
+                            <?= htmlspecialchars(localT('status_maintenance')); ?>
+
+                        </option>
+
+                        <option value="Indisponible"
+                            <?= $statutGeneral === 'Indisponible' ? 'selected' : ''; ?>>
+
+                            <?= htmlspecialchars(localT('status_unavailable')); ?>
+
+                        </option>
+
+                    </select>
+
                 </div>
 
             </div>
 
-            <div class="form-section-title mt-5">
-                <div class="form-section-icon">
-                    <i class="bi bi-info-circle-fill"></i>
-                </div>
-                <div>
-                    <h5>Remarque</h5>
-                    <small>La modification du local peut influencer l’emplacement des équipements associés.</small>
-                </div>
-            </div>
+            <div class="info-form-box mt-4">
 
-            <div class="info-form-box">
-                <i class="bi bi-lightbulb-fill"></i>
+                <i class="bi bi-info-circle-fill"></i>
+
                 <div>
-                    <strong>Conseil :</strong>
-                    utilisez des noms clairs comme “Bureau SI”, “Salle Informatique 1”, “Amphi A”.
+                    <?= htmlspecialchars(localT('edit_status_explanation')); ?>
                 </div>
+
             </div>
 
             <div class="form-actions">
 
-                <a href="<?= BASE_URL ?>?page=locals" class="btn btn-light border">
+                <a href="<?= BASE_URL ?>?page=locals"
+                   class="btn btn-light border">
+
                     <i class="bi bi-x-circle"></i>
-                    Annuler
+                    <?= htmlspecialchars(localT('cancel')); ?>
+
                 </a>
 
-                <button type="submit" class="btn btn-primary">
+                <button type="submit"
+                        class="btn btn-primary">
+
                     <i class="bi bi-check-circle"></i>
-                    Mettre à jour
+                    <?= htmlspecialchars(localT('update')); ?>
+
                 </button>
 
             </div>

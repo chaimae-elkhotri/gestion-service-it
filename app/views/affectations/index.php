@@ -3,7 +3,88 @@
 <?php require_once '../app/views/layouts/navbar.php'; ?>
 
 <?php
+
 $affectations = $affectations ?? [];
+
+if (!function_exists('affectationT')) {
+    function affectationT(
+        string $key,
+        array $replacements = []
+    ): string {
+        return t(
+            'affectations_module.' . $key,
+            $replacements
+        );
+    }
+}
+
+if (!function_exists('affectationNormalize')) {
+    function affectationNormalize(string $value): string
+    {
+        $value = mb_strtolower(
+            trim($value),
+            'UTF-8'
+        );
+
+        return strtr($value, [
+            'é' => 'e',
+            'è' => 'e',
+            'ê' => 'e',
+            'ë' => 'e',
+            'à' => 'a',
+            'â' => 'a',
+            'î' => 'i',
+            'ï' => 'i',
+            'ô' => 'o',
+            'ù' => 'u',
+            'û' => 'u',
+            'ç' => 'c'
+        ]);
+    }
+}
+
+$today = date('Y-m-d');
+$dateDans30Jours = date(
+    'Y-m-d',
+    strtotime('+30 days')
+);
+
+$filtreStatut = affectationNormalize(
+    (string)($_GET['statut'] ?? '')
+);
+
+if ($filtreStatut !== '') {
+    $affectations = array_values(
+        array_filter(
+            $affectations,
+            function (array $a) use (
+                $filtreStatut,
+                $today,
+                $dateDans30Jours
+            ): bool {
+                $dateFin =
+                    $a['date_fin_affectation']
+                    ?? $a['DATE_FIN_AFFECTATION']
+                    ?? '';
+
+                if (empty($dateFin)) {
+                    $statutCalcule = 'active';
+                } elseif ($dateFin < $today) {
+                    $statutCalcule = 'terminee';
+                } elseif (
+                    $dateFin <= $dateDans30Jours
+                ) {
+                    $statutCalcule = 'retour prevu';
+                } else {
+                    $statutCalcule = 'active';
+                }
+
+                return $statutCalcule ===
+                    $filtreStatut;
+            }
+        )
+    );
+}
 
 $totalAffectations = count($affectations);
 $totalActives = 0;
@@ -11,11 +92,11 @@ $totalTerminees = 0;
 $totalRetoursPrevus = 0;
 $totalSansDateFin = 0;
 
-$today = date('Y-m-d');
-$dateDans30Jours = date('Y-m-d', strtotime('+30 days'));
-
 foreach ($affectations as $a) {
-    $dateFin = $a['date_fin_affectation'] ?? $a['DATE_FIN_AFFECTATION'] ?? null;
+    $dateFin =
+        $a['date_fin_affectation']
+        ?? $a['DATE_FIN_AFFECTATION']
+        ?? null;
 
     if (empty($dateFin)) {
         $totalActives++;
@@ -30,6 +111,7 @@ foreach ($affectations as $a) {
         $totalTerminees++;
     }
 }
+
 ?>
 
 <div class="module-page">
@@ -37,61 +119,180 @@ foreach ($affectations as $a) {
     <div class="module-header">
 
         <div>
-            <h2>Gestion des affectations</h2>
-            <p>Gérez les affectations des équipements aux utilisateurs.</p>
+
+            <h2>
+                <?= htmlspecialchars(
+                    affectationT('management_title')
+                ); ?>
+            </h2>
+
+            <p>
+                <?= htmlspecialchars(
+                    affectationT('management_subtitle')
+                ); ?>
+            </p>
+
         </div>
 
-        <a href="<?= BASE_URL ?>?page=ajouter-affectation" class="btn btn-primary">
+        <a href="<?= BASE_URL ?>?page=ajouter-affectation"
+           class="btn btn-primary">
+
             <i class="bi bi-plus-circle"></i>
-            Nouvelle affectation
+
+            <?= htmlspecialchars(
+                affectationT('new_assignment')
+            ); ?>
+
         </a>
 
     </div>
 
+    <?php if (isset($_SESSION['success'])): ?>
+
+        <div class="alert alert-success">
+
+            <i class="bi bi-check-circle-fill me-2"></i>
+
+            <?= htmlspecialchars($_SESSION['success']); ?>
+
+        </div>
+
+        <?php unset($_SESSION['success']); ?>
+
+    <?php endif; ?>
+
+    <?php if (isset($_SESSION['error'])): ?>
+
+        <div class="alert alert-danger">
+
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+
+            <?= htmlspecialchars($_SESSION['error']); ?>
+
+        </div>
+
+        <?php unset($_SESSION['error']); ?>
+
+    <?php endif; ?>
+
     <div class="module-stats-grid">
 
         <div class="module-stat-card">
+
             <div class="module-stat-icon brown">
                 <i class="bi bi-arrow-left-right"></i>
             </div>
+
             <div>
-                <span>Total affectations</span>
+
+                <span>
+                    <?= htmlspecialchars(
+                        affectationT(
+                            'total_assignments'
+                        )
+                    ); ?>
+                </span>
+
                 <h3><?= $totalAffectations; ?></h3>
-                <small>Affectations enregistrées</small>
+
+                <small>
+                    <?= htmlspecialchars(
+                        affectationT(
+                            'registered_assignments'
+                        )
+                    ); ?>
+                </small>
+
             </div>
+
         </div>
 
         <div class="module-stat-card">
+
             <div class="module-stat-icon green">
                 <i class="bi bi-person-check-fill"></i>
             </div>
+
             <div>
-                <span>Affectations actives</span>
+
+                <span>
+                    <?= htmlspecialchars(
+                        affectationT(
+                            'active_assignments'
+                        )
+                    ); ?>
+                </span>
+
                 <h3><?= $totalActives; ?></h3>
-                <small>Équipements utilisés</small>
+
+                <small>
+                    <?= htmlspecialchars(
+                        affectationT('used_equipment')
+                    ); ?>
+                </small>
+
             </div>
+
         </div>
 
         <div class="module-stat-card">
+
             <div class="module-stat-icon orange">
                 <i class="bi bi-calendar-event-fill"></i>
             </div>
+
             <div>
-                <span>Retours prévus</span>
+
+                <span>
+                    <?= htmlspecialchars(
+                        affectationT(
+                            'expected_returns'
+                        )
+                    ); ?>
+                </span>
+
                 <h3><?= $totalRetoursPrevus; ?></h3>
-                <small>Dans les 30 jours</small>
+
+                <small>
+                    <?= htmlspecialchars(
+                        affectationT(
+                            'within_30_days'
+                        )
+                    ); ?>
+                </small>
+
             </div>
+
         </div>
 
         <div class="module-stat-card">
+
             <div class="module-stat-icon blue">
                 <i class="bi bi-check-circle-fill"></i>
             </div>
+
             <div>
-                <span>Affectations terminées</span>
+
+                <span>
+                    <?= htmlspecialchars(
+                        affectationT(
+                            'completed_assignments'
+                        )
+                    ); ?>
+                </span>
+
                 <h3><?= $totalTerminees; ?></h3>
-                <small>Équipements retournés</small>
+
+                <small>
+                    <?= htmlspecialchars(
+                        affectationT(
+                            'returned_equipment'
+                        )
+                    ); ?>
+                </small>
+
             </div>
+
         </div>
 
     </div>
@@ -100,40 +301,132 @@ foreach ($affectations as $a) {
 
         <form action="<?= BASE_URL ?>" method="GET">
 
-            <input type="hidden" name="page" value="affectations">
+            <input type="hidden"
+                   name="page"
+                   value="affectations">
 
             <div class="row g-3 align-items-end">
 
                 <div class="col-lg-6 col-md-12">
-                    <label class="form-label">Recherche</label>
+
+                    <label class="form-label">
+                        <?= htmlspecialchars(
+                            affectationT('search')
+                        ); ?>
+                    </label>
+
                     <div class="modern-search-input">
+
                         <i class="bi bi-search"></i>
+
                         <input type="text"
                                name="search"
-                               placeholder="Rechercher par utilisateur, équipement, date..."
-                               value="<?= isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                               placeholder="<?= htmlspecialchars(
+                                   affectationT(
+                                       'search_placeholder'
+                                   )
+                               ); ?>"
+                               value="<?= htmlspecialchars(
+                                   $_GET['search'] ?? ''
+                               ); ?>">
+
                     </div>
+
                 </div>
 
                 <div class="col-lg-3 col-md-6">
-                    <label class="form-label">Statut</label>
-                    <select class="form-select" disabled>
-                        <option>Tous les statuts</option>
-                        <option>Active</option>
-                        <option>Retour prévu</option>
-                        <option>Terminée</option>
+
+                    <label class="form-label">
+                        <?= htmlspecialchars(
+                            affectationT('status')
+                        ); ?>
+                    </label>
+
+                    <select name="statut"
+                            class="form-select"
+                            onchange="this.form.submit()">
+
+                        <option value=""
+                            <?= $filtreStatut === ''
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(
+                                affectationT(
+                                    'all_statuses'
+                                )
+                            ); ?>
+
+                        </option>
+
+                        <option value="active"
+                            <?= $filtreStatut === 'active'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(
+                                affectationT(
+                                    'status_active'
+                                )
+                            ); ?>
+
+                        </option>
+
+                        <option value="retour prevu"
+                            <?= $filtreStatut === 'retour prevu'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(
+                                affectationT(
+                                    'status_return_expected'
+                                )
+                            ); ?>
+
+                        </option>
+
+                        <option value="terminee"
+                            <?= $filtreStatut === 'terminee'
+                                ? 'selected'
+                                : ''; ?>>
+
+                            <?= htmlspecialchars(
+                                affectationT(
+                                    'status_completed'
+                                )
+                            ); ?>
+
+                        </option>
+
                     </select>
+
                 </div>
 
                 <div class="col-lg-3 col-md-6 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary flex-fill">
+
+                    <button type="submit"
+                            class="btn btn-primary flex-fill">
+
                         <i class="bi bi-search"></i>
-                        Rechercher
+
+                        <?= htmlspecialchars(
+                            affectationT(
+                                'search_button'
+                            )
+                        ); ?>
+
                     </button>
 
-                    <a href="<?= BASE_URL ?>?page=affectations" class="btn btn-light border">
+                    <a href="<?= BASE_URL ?>?page=affectations"
+                       class="btn btn-light border"
+                       title="<?= htmlspecialchars(
+                           affectationT('reset')
+                       ); ?>">
+
                         <i class="bi bi-arrow-clockwise"></i>
+
                     </a>
+
                 </div>
 
             </div>
@@ -147,13 +440,36 @@ foreach ($affectations as $a) {
         <div class="module-table-header">
 
             <div>
-                <h5>Liste des affectations</h5>
-                <small><?= $totalAffectations; ?> affectation(s) trouvée(s)</small>
+
+                <h5>
+                    <?= htmlspecialchars(
+                        affectationT(
+                            'assignment_list'
+                        )
+                    ); ?>
+                </h5>
+
+                <small>
+                    <?= htmlspecialchars(
+                        affectationT(
+                            'assignments_found',
+                            ['count' => $totalAffectations]
+                        )
+                    ); ?>
+                </small>
+
             </div>
 
             <span class="module-chip">
+
                 <i class="bi bi-pc-display-horizontal"></i>
-                Affectation matériel
+
+                <?= htmlspecialchars(
+                    affectationT(
+                        'equipment_assignment'
+                    )
+                ); ?>
+
             </span>
 
         </div>
@@ -163,133 +479,344 @@ foreach ($affectations as $a) {
             <table class="table table-hover align-middle modern-table">
 
                 <thead>
+
                 <tr>
-                    <th>ID</th>
-                    <th>Utilisateur</th>
-                    <th>Équipement</th>
-                    <th>Date affectation</th>
-                    <th>Date fin</th>
-                    <th>Statut</th>
-                    <th class="text-center">Actions</th>
+                    <th><?= htmlspecialchars(affectationT('id')); ?></th>
+                    <th><?= htmlspecialchars(affectationT('user')); ?></th>
+                    <th><?= htmlspecialchars(affectationT('equipment')); ?></th>
+                    <th><?= htmlspecialchars(affectationT('assignment_date')); ?></th>
+                    <th><?= htmlspecialchars(affectationT('end_date')); ?></th>
+                    <th><?= htmlspecialchars(affectationT('status')); ?></th>
+                    <th class="text-center">
+                        <?= htmlspecialchars(affectationT('actions')); ?>
+                    </th>
                 </tr>
+
                 </thead>
 
                 <tbody>
 
                 <?php if (!empty($affectations)): ?>
 
-                    <?php foreach ($affectations as $a): ?>
+                    <?php foreach (
+                        $affectations as $a
+                    ): ?>
 
                         <?php
-                        $id = $a['id_affectation'] ?? $a['ID_AFFECTATION_EQUIP'] ?? '';
-                        $idUtilisateur = $a['id_utilisateur'] ?? $a['ID_UTILISATEUR'] ?? '';
-                        $idEquipement = $a['id_equipement'] ?? $a['ID_EQUIPEMENT_'] ?? '';
 
-                        $nom = $a['nom'] ?? $a['NOM'] ?? '';
-                        $prenom = $a['prenom'] ?? $a['PRENOM'] ?? '';
+                        $id =
+                            $a['id_affectation']
+                            ?? $a['ID_AFFECTATION_EQUIP']
+                            ?? '';
 
-                        $numeroSerie = $a['numero_serie'] ?? $a['NUMERO_SERIE'] ?? '';
-                        $marque = $a['marque'] ?? $a['MARQUE'] ?? '';
-                        $modele = $a['modele'] ?? $a['MODELE'] ?? '';
+                        $idUtilisateur =
+                            $a['id_utilisateur']
+                            ?? $a['ID_UTILISATEUR']
+                            ?? '';
 
-                        $dateAffectation = $a['date_affectation'] ?? $a['DATE_AFFECTATION'] ?? '';
-                        $dateFin = $a['date_fin_affectation'] ?? $a['DATE_FIN_AFFECTATION'] ?? '';
+                        $nom =
+                            $a['nom']
+                            ?? $a['NOM']
+                            ?? '';
 
-                        $initiales = strtoupper(substr($prenom, 0, 1) . substr($nom, 0, 1));
+                        $prenom =
+                            $a['prenom']
+                            ?? $a['PRENOM']
+                            ?? '';
+
+                        $numeroSerie =
+                            $a['numero_serie']
+                            ?? $a['NUMERO_SERIE']
+                            ?? '';
+
+                        $marque =
+                            $a['marque']
+                            ?? $a['MARQUE']
+                            ?? '';
+
+                        $modele =
+                            $a['modele']
+                            ?? $a['MODELE']
+                            ?? '';
+
+                        $dateAffectation =
+                            $a['date_affectation']
+                            ?? $a['DATE_AFFECTATION']
+                            ?? '';
+
+                        $dateFin =
+                            $a['date_fin_affectation']
+                            ?? $a['DATE_FIN_AFFECTATION']
+                            ?? '';
+
+                        $initiales = mb_strtoupper(
+                            mb_substr(
+                                $prenom,
+                                0,
+                                1,
+                                'UTF-8'
+                            )
+                            .
+                            mb_substr(
+                                $nom,
+                                0,
+                                1,
+                                'UTF-8'
+                            ),
+                            'UTF-8'
+                        );
 
                         if (empty($dateFin)) {
-                            $statutAffectation = 'Active';
-                            $classStatut = 'affectation-active';
-                            $iconStatut = 'bi-check-circle-fill';
+                            $statutAffectation =
+                                affectationT(
+                                    'status_active'
+                                );
+
+                            $classStatut =
+                                'affectation-active';
+
+                            $iconStatut =
+                                'bi-check-circle-fill';
+
                         } elseif ($dateFin < $today) {
-                            $statutAffectation = 'Terminée';
-                            $classStatut = 'affectation-done';
-                            $iconStatut = 'bi-check2-circle';
-                        } elseif ($dateFin <= $dateDans30Jours) {
-                            $statutAffectation = 'Retour prévu';
-                            $classStatut = 'affectation-return';
-                            $iconStatut = 'bi-calendar-event-fill';
+                            $statutAffectation =
+                                affectationT(
+                                    'status_completed'
+                                );
+
+                            $classStatut =
+                                'affectation-done';
+
+                            $iconStatut =
+                                'bi-check2-circle';
+
+                        } elseif (
+                            $dateFin <= $dateDans30Jours
+                        ) {
+                            $statutAffectation =
+                                affectationT(
+                                    'status_return_expected'
+                                );
+
+                            $classStatut =
+                                'affectation-return';
+
+                            $iconStatut =
+                                'bi-calendar-event-fill';
+
                         } else {
-                            $statutAffectation = 'Active';
-                            $classStatut = 'affectation-active';
-                            $iconStatut = 'bi-check-circle-fill';
+                            $statutAffectation =
+                                affectationT(
+                                    'status_active'
+                                );
+
+                            $classStatut =
+                                'affectation-active';
+
+                            $iconStatut =
+                                'bi-check-circle-fill';
                         }
+
                         ?>
 
                         <tr>
 
                             <td>
-                                <span class="table-id">#AFF-<?= htmlspecialchars($id); ?></span>
+
+                                <span class="table-id">
+                                    #AFF-<?= htmlspecialchars($id); ?>
+                                </span>
+
                             </td>
 
                             <td>
+
                                 <div class="user-cell">
+
                                     <div class="table-avatar">
-                                        <?= htmlspecialchars($initiales ?: 'U'); ?>
-                                    </div>
-                                    <div>
-                                        <strong><?= htmlspecialchars(trim($prenom . ' ' . $nom) ?: 'Utilisateur'); ?></strong>
-                                        <small>ID utilisateur : <?= htmlspecialchars($idUtilisateur); ?></small>
-                                    </div>
-                                </div>
-                            </td>
 
-                            <td>
-                                <div class="affectation-equipment-cell">
-                                    <div class="affectation-equipment-icon">
-                                        <i class="bi bi-pc-display"></i>
+                                        <?= htmlspecialchars(
+                                            $initiales ?: 'U'
+                                        ); ?>
+
                                     </div>
+
                                     <div>
-                                        <strong><?= htmlspecialchars(trim($marque . ' ' . $modele) ?: 'Équipement'); ?></strong>
+
+                                        <strong>
+                                            <?= htmlspecialchars(
+                                                trim(
+                                                    $prenom
+                                                    . ' '
+                                                    . $nom
+                                                )
+                                                ?: affectationT(
+                                                    'user'
+                                                )
+                                            ); ?>
+                                        </strong>
+
                                         <small>
-                                            Série :
-                                            <?= htmlspecialchars($numeroSerie ?: 'Non définie'); ?>
+                                            <?= htmlspecialchars(
+                                                affectationT(
+                                                    'user_id',
+                                                    [
+                                                        'id' =>
+                                                            $idUtilisateur
+                                                    ]
+                                                )
+                                            ); ?>
                                         </small>
+
                                     </div>
+
                                 </div>
+
                             </td>
 
                             <td>
+
+                                <div class="affectation-equipment-cell">
+
+                                    <div class="affectation-equipment-icon">
+
+                                        <i class="bi bi-pc-display"></i>
+
+                                    </div>
+
+                                    <div>
+
+                                        <strong>
+                                            <?= htmlspecialchars(
+                                                trim(
+                                                    $marque
+                                                    . ' '
+                                                    . $modele
+                                                )
+                                                ?: affectationT(
+                                                    'equipment'
+                                                )
+                                            ); ?>
+                                        </strong>
+
+                                        <small>
+
+                                            <?= htmlspecialchars(
+                                                affectationT(
+                                                    'serial_number'
+                                                )
+                                            ); ?>
+
+                                            :
+
+                                            <?= htmlspecialchars(
+                                                $numeroSerie
+                                                ?: affectationT(
+                                                    'undefined_feminine'
+                                                )
+                                            ); ?>
+
+                                        </small>
+
+                                    </div>
+
+                                </div>
+
+                            </td>
+
+                            <td>
+
                                 <span class="date-badge">
+
                                     <i class="bi bi-calendar-check"></i>
-                                    <?= !empty($dateAffectation) ? date('d/m/Y', strtotime($dateAffectation)) : '-'; ?>
+
+                                    <?= !empty($dateAffectation)
+                                        ? date(
+                                            'd/m/Y',
+                                            strtotime(
+                                                $dateAffectation
+                                            )
+                                        )
+                                        : '-'; ?>
+
                                 </span>
+
                             </td>
 
                             <td>
+
                                 <?php if (!empty($dateFin)): ?>
+
                                     <span class="date-badge">
+
                                         <i class="bi bi-calendar-x"></i>
-                                        <?= date('d/m/Y', strtotime($dateFin)); ?>
+
+                                        <?= date(
+                                            'd/m/Y',
+                                            strtotime($dateFin)
+                                        ); ?>
+
                                     </span>
+
                                 <?php else: ?>
+
                                     <span class="no-date-badge">
+
                                         <i class="bi bi-dash-circle"></i>
-                                        Non définie
+
+                                        <?= htmlspecialchars(
+                                            affectationT(
+                                                'undefined_feminine'
+                                            )
+                                        ); ?>
+
                                     </span>
+
                                 <?php endif; ?>
+
                             </td>
 
                             <td>
+
                                 <span class="badge <?= $classStatut; ?>">
+
                                     <i class="bi <?= $iconStatut; ?>"></i>
-                                    <?= $statutAffectation; ?>
+
+                                    <?= htmlspecialchars(
+                                        $statutAffectation
+                                    ); ?>
+
                                 </span>
+
                             </td>
 
                             <td class="text-center">
 
-                                <a href="<?= BASE_URL ?>?page=modifier-affectation&id=<?= $id; ?>"
+                                <a href="<?= BASE_URL ?>?page=modifier-affectation&id=<?= (int)$id; ?>"
                                    class="btn btn-warning btn-sm"
-                                   title="Modifier">
+                                   title="<?= htmlspecialchars(
+                                       affectationT('edit')
+                                   ); ?>">
+
                                     <i class="bi bi-pencil-square"></i>
+
                                 </a>
 
-                                <a href="<?= BASE_URL ?>?page=supprimer-affectation&id=<?= $id; ?>"
+                                <a href="<?= BASE_URL ?>?page=supprimer-affectation&id=<?= (int)$id; ?>"
                                    class="btn btn-danger btn-sm"
-                                   title="Supprimer"
-                                   onclick="return confirm('Voulez-vous vraiment supprimer cette affectation ?');">
+                                   title="<?= htmlspecialchars(
+                                       affectationT('delete')
+                                   ); ?>"
+                                   onclick="return confirm('<?= htmlspecialchars(
+                                       affectationT(
+                                           'delete_confirmation'
+                                       ),
+                                       ENT_QUOTES,
+                                       'UTF-8'
+                                   ); ?>');">
+
                                     <i class="bi bi-trash"></i>
+
                                 </a>
 
                             </td>
@@ -301,11 +828,22 @@ foreach ($affectations as $a) {
                 <?php else: ?>
 
                     <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">
+
+                        <td colspan="7"
+                            class="text-center py-5 text-muted">
+
                             <i class="bi bi-arrow-left-right fs-1"></i>
+
                             <br><br>
-                            Aucune affectation trouvée.
+
+                            <?= htmlspecialchars(
+                                affectationT(
+                                    'no_assignment'
+                                )
+                            ); ?>
+
                         </td>
+
                     </tr>
 
                 <?php endif; ?>

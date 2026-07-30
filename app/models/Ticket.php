@@ -168,16 +168,20 @@ class Ticket
         ]);
     }
 
-    public function delete($id)
+    public function cancel($id)
     {
-        $sql = "DELETE FROM ticket
-                WHERE ID_TICKET = :id";
+        $sql = "UPDATE ticket
+                SET STATUT = 'Annulé'
+                WHERE ID_TICKET = :id
+                AND STATUT NOT IN ('Annulé', 'Annule')";
 
         $stmt = $this->db->prepare($sql);
 
-        return $stmt->execute([
+        $stmt->execute([
             ':id' => $id
         ]);
+
+        return $stmt->rowCount() > 0;
     }
 
     public function count()

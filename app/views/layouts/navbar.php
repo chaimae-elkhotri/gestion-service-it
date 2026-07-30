@@ -2,221 +2,125 @@
 
 $page = $_GET['page'] ?? 'dashboard';
 
-$titres = [
+$icons = [
 
-    'dashboard' => [
-        'icon' => 'bi-house-door-fill',
-        'titre' => 'Tableau de bord',
-        'sousTitre' => 'Vue d’ensemble du parc informatique'
-    ],
+    'dashboard' => 'bi-house-door-fill',
 
-    'utilisateurs' => [
-        'icon' => 'bi-people-fill',
-        'titre' => 'Utilisateurs',
-        'sousTitre' => 'Gestion des comptes et des accès au système'
-    ],
+    'utilisateurs' => 'bi-people-fill',
+    'ajouter-utilisateur' => 'bi-person-plus-fill',
+    'modifier-utilisateur' => 'bi-pencil-square',
 
-    'ajouter-utilisateur' => [
-        'icon' => 'bi-person-plus-fill',
-        'titre' => 'Ajouter un utilisateur',
-        'sousTitre' => 'Création d’un nouveau compte utilisateur'
-    ],
+    'categories' => 'bi-grid-3x3-gap-fill',
+    'ajouter-categorie' => 'bi-plus-circle-fill',
+    'modifier-categorie' => 'bi-pencil-square',
 
-    'modifier-utilisateur' => [
-        'icon' => 'bi-pencil-square',
-        'titre' => 'Modifier un utilisateur',
-        'sousTitre' => 'Mise à jour des informations utilisateur'
-    ],
+    'equipements' => 'bi-pc-display',
+    'ajouter-equipement' => 'bi-plus-circle-fill',
+    'modifier-equipement' => 'bi-pencil-square',
+    'edit-equipement' => 'bi-pencil-square',
 
-    'categories' => [
-        'icon' => 'bi-grid-3x3-gap-fill',
-        'titre' => 'Catégories',
-        'sousTitre' => 'Gestion des catégories d’équipements et de logiciels'
-    ],
+    'locals' => 'bi-building-fill',
+    'ajouter-local' => 'bi-plus-circle-fill',
+    'modifier-local' => 'bi-pencil-square',
 
-    'ajouter-categorie' => [
-        'icon' => 'bi-plus-circle-fill',
-        'titre' => 'Ajouter une catégorie',
-        'sousTitre' => 'Création d’une nouvelle catégorie'
-    ],
+    'occupations-locaux' => 'bi-calendar2-week-fill',
+    'ajouter-occupation-local' => 'bi-calendar-plus-fill',
+    'modifier-occupation-local' => 'bi-pencil-square',
 
-    'modifier-categorie' => [
-        'icon' => 'bi-pencil-square',
-        'titre' => 'Modifier une catégorie',
-        'sousTitre' => 'Mise à jour d’une catégorie'
-    ],
+    'affectations' => 'bi-arrow-left-right',
+    'ajouter-affectation' => 'bi-plus-circle-fill',
+    'modifier-affectation' => 'bi-pencil-square',
 
-    'equipements' => [
-        'icon' => 'bi-pc-display',
-        'titre' => 'Équipements',
-        'sousTitre' => 'Gestion de l’ensemble des équipements du parc informatique'
-    ],
+    'tickets' => 'bi-ticket-detailed-fill',
+    'ajouter-ticket' => 'bi-plus-circle-fill',
+    'modifier-ticket' => 'bi-pencil-square',
 
-    'ajouter-equipement' => [
-        'icon' => 'bi-plus-circle-fill',
-        'titre' => 'Ajouter un équipement',
-        'sousTitre' => 'Ajout d’un nouveau matériel'
-    ],
+    'interventions' => 'bi-tools',
+    'ajouter-intervention' => 'bi-plus-circle-fill',
+    'modifier-intervention' => 'bi-pencil-square',
 
-    'modifier-equipement' => [
-        'icon' => 'bi-pencil-square',
-        'titre' => 'Modifier un équipement',
-        'sousTitre' => 'Mise à jour des informations du matériel'
-    ],
+    'evaluations' => 'bi-star-fill',
+    'ajouter-evaluation' => 'bi-plus-circle-fill',
+    'modifier-evaluation' => 'bi-pencil-square',
 
-    'locals' => [
-        'icon' => 'bi-building-fill',
-        'titre' => 'Locaux',
-        'sousTitre' => 'Gestion des locaux et espaces de l’établissement'
-    ],
+    'logiciels' => 'bi-disc-fill',
+    'ajouter-logiciel' => 'bi-plus-circle-fill',
+    'modifier-logiciel' => 'bi-pencil-square',
 
-    'ajouter-local' => [
-        'icon' => 'bi-plus-circle-fill',
-        'titre' => 'Ajouter un local',
-        'sousTitre' => 'Création d’un nouveau local'
-    ],
+    'licences' => 'bi-key-fill',
+    'ajouter-licence' => 'bi-plus-circle-fill',
+    'modifier-licence' => 'bi-pencil-square',
 
-    'modifier-local' => [
-        'icon' => 'bi-pencil-square',
-        'titre' => 'Modifier un local',
-        'sousTitre' => 'Mise à jour des informations du local'
-    ],
+    'historiques' => 'bi-clock-history',
 
-    'affectations' => [
-        'icon' => 'bi-arrow-left-right',
-        'titre' => 'Affectations',
-        'sousTitre' => 'Gestion des affectations d’équipements aux utilisateurs'
-    ],
+    'profil' => 'bi-person-circle',
 
-    'ajouter-affectation' => [
-        'icon' => 'bi-plus-circle-fill',
-        'titre' => 'Ajouter une affectation',
-        'sousTitre' => 'Affectation d’un équipement à un utilisateur'
-    ],
-
-    'modifier-affectation' => [
-        'icon' => 'bi-pencil-square',
-        'titre' => 'Modifier une affectation',
-        'sousTitre' => 'Mise à jour d’une affectation'
-    ],
-
-    'tickets' => [
-        'icon' => 'bi-ticket-detailed-fill',
-        'titre' => 'Tickets',
-        'sousTitre' => 'Suivi et gestion des demandes d’assistance'
-    ],
-
-    'ajouter-ticket' => [
-        'icon' => 'bi-plus-circle-fill',
-        'titre' => 'Ajouter un ticket',
-        'sousTitre' => 'Création d’une nouvelle demande'
-    ],
-
-    'modifier-ticket' => [
-        'icon' => 'bi-pencil-square',
-        'titre' => 'Modifier un ticket',
-        'sousTitre' => 'Mise à jour d’une demande d’assistance'
-    ],
-
-    'interventions' => [
-        'icon' => 'bi-tools',
-        'titre' => 'Interventions',
-        'sousTitre' => 'Suivi et gestion des interventions techniques'
-    ],
-
-    'ajouter-intervention' => [
-        'icon' => 'bi-plus-circle-fill',
-        'titre' => 'Ajouter une intervention',
-        'sousTitre' => 'Création d’une intervention technique'
-    ],
-
-    'modifier-intervention' => [
-        'icon' => 'bi-pencil-square',
-        'titre' => 'Modifier une intervention',
-        'sousTitre' => 'Mise à jour d’une intervention technique'
-    ],
-
-    'evaluations' => [
-        'icon' => 'bi-star-fill',
-        'titre' => 'Évaluations',
-        'sousTitre' => 'Évaluation des interventions et des techniciens'
-    ],
-
-    'ajouter-evaluation' => [
-        'icon' => 'bi-plus-circle-fill',
-        'titre' => 'Ajouter une évaluation',
-        'sousTitre' => 'Ajout d’une note et d’un commentaire'
-    ],
-
-    'modifier-evaluation' => [
-        'icon' => 'bi-pencil-square',
-        'titre' => 'Modifier une évaluation',
-        'sousTitre' => 'Mise à jour d’une évaluation'
-    ],
-
-    'logiciels' => [
-        'icon' => 'bi-disc-fill',
-        'titre' => 'Logiciels',
-        'sousTitre' => 'Gestion des logiciels installés'
-    ],
-
-    'ajouter-logiciel' => [
-        'icon' => 'bi-plus-circle-fill',
-        'titre' => 'Ajouter un logiciel',
-        'sousTitre' => 'Ajout d’un nouveau logiciel'
-    ],
-
-    'modifier-logiciel' => [
-        'icon' => 'bi-pencil-square',
-        'titre' => 'Modifier un logiciel',
-        'sousTitre' => 'Mise à jour des informations du logiciel'
-    ],
-
-    'licences' => [
-        'icon' => 'bi-key-fill',
-        'titre' => 'Licences',
-        'sousTitre' => 'Gestion des licences logicielles'
-    ],
-
-    'ajouter-licence' => [
-        'icon' => 'bi-plus-circle-fill',
-        'titre' => 'Ajouter une licence',
-        'sousTitre' => 'Création d’une nouvelle licence logicielle'
-    ],
-
-    'modifier-licence' => [
-        'icon' => 'bi-pencil-square',
-        'titre' => 'Modifier une licence',
-        'sousTitre' => 'Mise à jour d’une licence logicielle'
-    ],
-
-    'historiques' => [
-        'icon' => 'bi-clock-history',
-        'titre' => 'Historique',
-        'sousTitre' => 'Traçabilité des actions réalisées dans l’application'
-    ],
-
-    'profil' => [
-        'icon' => 'bi-person-circle',
-        'titre' => 'Mon profil',
-        'sousTitre' => 'Informations du compte connecté'
-    ],
-
-    'parametres-compte' => [
-        'icon' => 'bi-gear-fill',
-        'titre' => 'Paramètres du compte',
-        'sousTitre' => 'Préférences et sécurité du compte'
-    ]
-
+    'parametres-compte' => 'bi-gear-fill'
 ];
 
-$navbar = $titres[$page] ?? $titres['dashboard'];
+$pageTraduction = $page;
 
-$prenom = $_SESSION['prenom'] ?? 'FSJES';
-$nom = $_SESSION['nom'] ?? 'Admin';
-$roleConnecte = $_SESSION['nom_role'] ?? $_SESSION['role'] ?? 'Administrateur';
+if ($page === 'edit-equipement') {
+    $pageTraduction = 'modifier-equipement';
+}
 
-$initialesUser = strtoupper(substr($prenom, 0, 1) . substr($nom, 0, 1));
+$titreKey =
+    'pages.'
+    . $pageTraduction
+    . '.title';
+
+$sousTitreKey =
+    'pages.'
+    . $pageTraduction
+    . '.subtitle';
+
+$titre = t($titreKey);
+$sousTitre = t($sousTitreKey);
+
+if ($titre === $titreKey) {
+    $titre = t('pages.dashboard.title');
+}
+
+if ($sousTitre === $sousTitreKey) {
+    $sousTitre = t('pages.dashboard.subtitle');
+}
+
+$icon = $icons[$page]
+    ?? 'bi-house-door-fill';
+
+$prenom = $_SESSION['prenom']
+    ?? 'FSJES';
+
+$nom = $_SESSION['nom']
+    ?? 'Admin';
+
+if (Auth::estAdmin()) {
+    $roleConnecte = t('role.admin');
+} elseif (Auth::estTechnicien()) {
+    $roleConnecte = t('role.technician');
+} else {
+    $roleConnecte = t('role.employee');
+}
+
+$initialesUser = mb_strtoupper(
+    mb_substr($prenom, 0, 1, 'UTF-8')
+    .
+    mb_substr($nom, 0, 1, 'UTF-8'),
+    'UTF-8'
+);
+
+if (!function_exists('languageUrl')) {
+    function languageUrl(string $language): string
+    {
+        $parameters = $_GET;
+
+        $parameters['lang'] = $language;
+
+        return BASE_URL
+            . '?'
+            . http_build_query($parameters);
+    }
+}
 
 ?>
 
@@ -225,12 +129,21 @@ $initialesUser = strtoupper(substr($prenom, 0, 1) . substr($nom, 0, 1));
     <div class="page-title">
 
         <div class="page-icon">
-            <i class="bi <?= $navbar['icon']; ?>"></i>
+
+            <i class="bi <?= htmlspecialchars($icon); ?>"></i>
+
         </div>
 
         <div>
-            <h4><?= $navbar['titre']; ?></h4>
-            <small><?= $navbar['sousTitre']; ?></small>
+
+            <h4>
+                <?= htmlspecialchars($titre); ?>
+            </h4>
+
+            <small>
+                <?= htmlspecialchars($sousTitre); ?>
+            </small>
+
         </div>
 
     </div>
@@ -241,7 +154,65 @@ $initialesUser = strtoupper(substr($prenom, 0, 1) . substr($nom, 0, 1));
 
             <i class="bi bi-search"></i>
 
-            <input type="text" placeholder="Rechercher...">
+            <input
+                type="text"
+                placeholder="<?= htmlspecialchars(
+                    t('navbar.search')
+                ); ?>">
+
+        </div>
+
+        <div class="dropdown">
+
+            <button
+                class="btn btn-light border dropdown-toggle"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false">
+
+                <i class="bi bi-translate"></i>
+
+                <?= Language::isArabic()
+                    ? 'العربية'
+                    : 'Français'; ?>
+
+            </button>
+
+            <ul class="dropdown-menu dropdown-menu-end">
+
+                <li>
+
+                    <a
+                        class="dropdown-item <?= Language::get() === 'fr'
+                            ? 'active'
+                            : ''; ?>"
+                        href="<?= htmlspecialchars(
+                            languageUrl('fr')
+                        ); ?>">
+
+                        🇫🇷 Français
+
+                    </a>
+
+                </li>
+
+                <li>
+
+                    <a
+                        class="dropdown-item <?= Language::get() === 'ar'
+                            ? 'active'
+                            : ''; ?>"
+                        href="<?= htmlspecialchars(
+                            languageUrl('ar')
+                        ); ?>">
+
+                        🇲🇦 العربية
+
+                    </a>
+
+                </li>
+
+            </ul>
 
         </div>
 
@@ -255,22 +226,33 @@ $initialesUser = strtoupper(substr($prenom, 0, 1) . substr($nom, 0, 1));
 
         <div class="dropdown user-menu">
 
-            <button class="user-info user-info-button"
-                    type="button"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false">
+            <button
+                class="user-info user-info-button"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false">
 
                 <div class="user-avatar">
-                    <?= htmlspecialchars($initialesUser ?: 'FS'); ?>
+
+                    <?= htmlspecialchars(
+                        $initialesUser ?: 'FS'
+                    ); ?>
+
                 </div>
 
                 <div class="user-text">
 
                     <strong>
-                        <?= htmlspecialchars($prenom . ' ' . $nom); ?>
+
+                        <?= htmlspecialchars(
+                            trim($prenom . ' ' . $nom)
+                        ); ?>
+
                     </strong>
 
-                    <small><?= htmlspecialchars($roleConnecte); ?></small>
+                    <small>
+                        <?= htmlspecialchars($roleConnecte); ?>
+                    </small>
 
                 </div>
 
@@ -283,55 +265,143 @@ $initialesUser = strtoupper(substr($prenom, 0, 1) . substr($nom, 0, 1));
                 <li class="clean-profile-header">
 
                     <div class="clean-profile-avatar">
-                        <?= htmlspecialchars($initialesUser ?: 'FS'); ?>
+
+                        <?= htmlspecialchars(
+                            $initialesUser ?: 'FS'
+                        ); ?>
+
                     </div>
 
                     <div>
-                        <strong><?= htmlspecialchars($prenom . ' ' . $nom); ?></strong>
-                        <small><?= htmlspecialchars($roleConnecte); ?></small>
+
+                        <strong>
+
+                            <?= htmlspecialchars(
+                                trim($prenom . ' ' . $nom)
+                            ); ?>
+
+                        </strong>
+
+                        <small>
+                            <?= htmlspecialchars($roleConnecte); ?>
+                        </small>
+
                     </div>
 
                 </li>
 
-                <li><hr class="dropdown-divider"></li>
-
                 <li>
-                    <a class="clean-profile-item" href="<?= BASE_URL ?>?page=profil">
-                        <span><i class="bi bi-person-circle"></i></span>
-                        <div>
-                            <strong>Mon profil</strong>
-                            <small>Voir mes informations</small>
-                        </div>
-                    </a>
+                    <hr class="dropdown-divider">
                 </li>
 
                 <li>
-                    <a class="clean-profile-item" href="<?= BASE_URL ?>?page=dashboard">
-                        <span><i class="bi bi-speedometer2"></i></span>
+
+                    <a
+                        class="clean-profile-item"
+                        href="<?= BASE_URL ?>?page=profil">
+
+                        <span>
+                            <i class="bi bi-person-circle"></i>
+                        </span>
+
                         <div>
-                            <strong>Tableau de bord</strong>
-                            <small>Retour à l’accueil</small>
+
+                            <strong>
+                                <?= htmlspecialchars(
+                                    t('navbar.profile')
+                                ); ?>
+                            </strong>
+
+                            <small>
+                                <?= htmlspecialchars(
+                                    t('navbar.profile_subtitle')
+                                ); ?>
+                            </small>
+
                         </div>
+
                     </a>
+
                 </li>
 
                 <li>
-                    <a class="clean-profile-item" href="<?= BASE_URL ?>?page=parametres-compte">
-                        <span><i class="bi bi-gear-fill"></i></span>
+
+                    <a
+                        class="clean-profile-item"
+                        href="<?= BASE_URL ?>?page=dashboard">
+
+                        <span>
+                            <i class="bi bi-speedometer2"></i>
+                        </span>
+
                         <div>
-                            <strong>Paramètres</strong>
-                            <small>Compte et sécurité</small>
+
+                            <strong>
+                                <?= htmlspecialchars(
+                                    t('navbar.dashboard')
+                                ); ?>
+                            </strong>
+
+                            <small>
+                                <?= htmlspecialchars(
+                                    t('navbar.dashboard_subtitle')
+                                ); ?>
+                            </small>
+
                         </div>
+
                     </a>
+
                 </li>
 
-                <li><hr class="dropdown-divider"></li>
+                <li>
+
+                    <a
+                        class="clean-profile-item"
+                        href="<?= BASE_URL ?>?page=parametres-compte">
+
+                        <span>
+                            <i class="bi bi-gear-fill"></i>
+                        </span>
+
+                        <div>
+
+                            <strong>
+                                <?= htmlspecialchars(
+                                    t('navbar.settings')
+                                ); ?>
+                            </strong>
+
+                            <small>
+                                <?= htmlspecialchars(
+                                    t('navbar.settings_subtitle')
+                                ); ?>
+                            </small>
+
+                        </div>
+
+                    </a>
+
+                </li>
 
                 <li>
-                    <a class="clean-logout-item" href="<?= BASE_URL ?>?page=logout">
+                    <hr class="dropdown-divider">
+                </li>
+
+                <li>
+
+                    <a
+                        class="clean-logout-item"
+                        href="<?= BASE_URL ?>?page=logout">
+
                         <i class="bi bi-box-arrow-right"></i>
-                        Déconnexion
+
+                        <?= htmlspecialchars(
+                            t('navbar.logout')
+                        ); ?>
+
                     </a>
+
                 </li>
 
             </ul>
@@ -344,15 +414,18 @@ $initialesUser = strtoupper(substr($prenom, 0, 1) . substr($nom, 0, 1));
 
 <?php if (isset($_SESSION['success'])): ?>
 
-    <div class="alert alert-success alert-dismissible fade show mt-3 shadow-sm" role="alert">
+    <div
+        class="alert alert-success alert-dismissible fade show mt-3 shadow-sm"
+        role="alert">
 
         <i class="bi bi-check-circle-fill me-2"></i>
 
-        <?= $_SESSION['success']; ?>
+        <?= htmlspecialchars($_SESSION['success']); ?>
 
-        <button type="button"
-                class="btn-close"
-                data-bs-dismiss="alert">
+        <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="alert">
         </button>
 
     </div>

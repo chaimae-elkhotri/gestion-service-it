@@ -3,6 +3,7 @@
 <?php require_once '../app/views/layouts/navbar.php'; ?>
 
 <?php
+
 $utilisateur = $utilisateur ?? $user ?? [];
 $roles = $roles ?? [];
 
@@ -10,9 +11,65 @@ $id = $utilisateur['id_utilisateur'] ?? $utilisateur['ID_UTILISATEUR'] ?? '';
 $nom = $utilisateur['nom'] ?? $utilisateur['NOM'] ?? '';
 $prenom = $utilisateur['prenom'] ?? $utilisateur['PRENOM'] ?? '';
 $email = $utilisateur['email'] ?? $utilisateur['EMAIL'] ?? '';
-$tel = $utilisateur['tel'] ?? $utilisateur['telephone'] ?? $utilisateur['TEL'] ?? $utilisateur['TELEPHONE'] ?? '';
+$tel = $utilisateur['tel']
+    ?? $utilisateur['telephone']
+    ?? $utilisateur['TEL']
+    ?? $utilisateur['TELEPHONE']
+    ?? '';
 $statut = $utilisateur['statut'] ?? $utilisateur['STATUT'] ?? 'Actif';
 $idRoleUser = $utilisateur['id_role'] ?? $utilisateur['ID_ROLE'] ?? '';
+
+if (!function_exists('usersT')) {
+    function usersT(string $key, array $replacements = []): string
+    {
+        return t('users_module.' . $key, $replacements);
+    }
+}
+
+if (!function_exists('userNormalizeValue')) {
+    function userNormalizeValue(string $value): string
+    {
+        $value = mb_strtolower(trim($value), 'UTF-8');
+
+        return strtr($value, [
+            'é' => 'e',
+            'è' => 'e',
+            'ê' => 'e',
+            'ë' => 'e',
+            'à' => 'a',
+            'â' => 'a',
+            'î' => 'i',
+            'ï' => 'i',
+            'ô' => 'o',
+            'ù' => 'u',
+            'û' => 'u',
+            'ç' => 'c'
+        ]);
+    }
+}
+
+if (!function_exists('userRoleLabel')) {
+    function userRoleLabel($role, $idRole = null): string
+    {
+        $roleText = userNormalizeValue((string)$role);
+        $id = (string)($idRole ?? $role);
+
+        if ($id === '1' || str_contains($roleText, 'admin')) {
+            return t('role.admin');
+        }
+
+        if ($id === '2' || str_contains($roleText, 'technicien')) {
+            return t('role.technician');
+        }
+
+        if ($id === '3' || str_contains($roleText, 'employe')) {
+            return t('role.employee');
+        }
+
+        return (string)$role;
+    }
+}
+
 ?>
 
 <div class="module-page">
@@ -20,13 +77,13 @@ $idRoleUser = $utilisateur['id_role'] ?? $utilisateur['ID_ROLE'] ?? '';
     <div class="module-header">
 
         <div>
-            <h2>Modifier un utilisateur</h2>
-            <p>Mettez à jour les informations du compte utilisateur.</p>
+            <h2><?= htmlspecialchars(usersT('edit_title')); ?></h2>
+            <p><?= htmlspecialchars(usersT('edit_intro')); ?></p>
         </div>
 
         <a href="<?= BASE_URL ?>?page=utilisateurs" class="btn btn-light border">
-            <i class="bi bi-arrow-left"></i>
-            Retour
+            <i class="bi <?= Language::isRtl() ? 'bi-arrow-right' : 'bi-arrow-left'; ?>"></i>
+            <?= htmlspecialchars(usersT('back')); ?>
         </a>
 
     </div>
@@ -42,15 +99,15 @@ $idRoleUser = $utilisateur['id_role'] ?? $utilisateur['ID_ROLE'] ?? '';
                     <i class="bi bi-pencil-square"></i>
                 </div>
                 <div>
-                    <h5>Informations personnelles</h5>
-                    <small>Modifiez les informations de base de l’utilisateur.</small>
+                    <h5><?= htmlspecialchars(usersT('personal_info')); ?></h5>
+                    <small><?= htmlspecialchars(usersT('edit_personal_help')); ?></small>
                 </div>
             </div>
 
             <div class="row g-4">
 
                 <div class="col-md-6">
-                    <label class="form-label">Nom</label>
+                    <label class="form-label"><?= htmlspecialchars(usersT('last_name')); ?></label>
                     <div class="input-with-icon">
                         <i class="bi bi-person"></i>
                         <input type="text"
@@ -62,7 +119,7 @@ $idRoleUser = $utilisateur['id_role'] ?? $utilisateur['ID_ROLE'] ?? '';
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label">Prénom</label>
+                    <label class="form-label"><?= htmlspecialchars(usersT('first_name')); ?></label>
                     <div class="input-with-icon">
                         <i class="bi bi-person"></i>
                         <input type="text"
@@ -74,7 +131,7 @@ $idRoleUser = $utilisateur['id_role'] ?? $utilisateur['ID_ROLE'] ?? '';
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label">Email</label>
+                    <label class="form-label"><?= htmlspecialchars(usersT('email')); ?></label>
                     <div class="input-with-icon">
                         <i class="bi bi-envelope"></i>
                         <input type="email"
@@ -86,7 +143,7 @@ $idRoleUser = $utilisateur['id_role'] ?? $utilisateur['ID_ROLE'] ?? '';
                 </div>
 
                 <div class="col-md-6">
-                    <label class="form-label">Téléphone</label>
+                    <label class="form-label"><?= htmlspecialchars(usersT('phone')); ?></label>
                     <div class="input-with-icon">
                         <i class="bi bi-telephone"></i>
                         <input type="text"
@@ -103,15 +160,15 @@ $idRoleUser = $utilisateur['id_role'] ?? $utilisateur['ID_ROLE'] ?? '';
                     <i class="bi bi-shield-lock-fill"></i>
                 </div>
                 <div>
-                    <h5>Accès au système</h5>
-                    <small>Modifiez le rôle, le statut ou le mot de passe.</small>
+                    <h5><?= htmlspecialchars(usersT('system_access')); ?></h5>
+                    <small><?= htmlspecialchars(usersT('edit_access_help')); ?></small>
                 </div>
             </div>
 
             <div class="row g-4">
 
                 <div class="col-md-4">
-                    <label class="form-label">Rôle</label>
+                    <label class="form-label"><?= htmlspecialchars(usersT('role')); ?></label>
                     <select name="id_role" class="form-select" required>
 
                         <?php if (!empty($roles)): ?>
@@ -124,17 +181,23 @@ $idRoleUser = $utilisateur['id_role'] ?? $utilisateur['ID_ROLE'] ?? '';
                                 ?>
 
                                 <option value="<?= htmlspecialchars($idRole); ?>"
-                                    <?= ($idRole == $idRoleUser) ? 'selected' : ''; ?>>
-                                    <?= htmlspecialchars($nomRole); ?>
+                                    <?= ((string)$idRole === (string)$idRoleUser) ? 'selected' : ''; ?>>
+                                    <?= htmlspecialchars(userRoleLabel($nomRole, $idRole)); ?>
                                 </option>
 
                             <?php endforeach; ?>
 
                         <?php else: ?>
 
-                            <option value="1" <?= ($idRoleUser == 1) ? 'selected' : ''; ?>>Administrateur</option>
-                            <option value="2" <?= ($idRoleUser == 2) ? 'selected' : ''; ?>>Technicien</option>
-                            <option value="3" <?= ($idRoleUser == 3) ? 'selected' : ''; ?>>Employé</option>
+                            <option value="1" <?= ((string)$idRoleUser === '1') ? 'selected' : ''; ?>>
+                                <?= htmlspecialchars(t('role.admin')); ?>
+                            </option>
+                            <option value="2" <?= ((string)$idRoleUser === '2') ? 'selected' : ''; ?>>
+                                <?= htmlspecialchars(t('role.technician')); ?>
+                            </option>
+                            <option value="3" <?= ((string)$idRoleUser === '3') ? 'selected' : ''; ?>>
+                                <?= htmlspecialchars(t('role.employee')); ?>
+                            </option>
 
                         <?php endif; ?>
 
@@ -142,21 +205,25 @@ $idRoleUser = $utilisateur['id_role'] ?? $utilisateur['ID_ROLE'] ?? '';
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">Statut</label>
+                    <label class="form-label"><?= htmlspecialchars(usersT('status')); ?></label>
                     <select name="statut" class="form-select" required>
-                        <option value="Actif" <?= ($statut == 'Actif') ? 'selected' : ''; ?>>Actif</option>
-                        <option value="Inactif" <?= ($statut == 'Inactif') ? 'selected' : ''; ?>>Inactif</option>
+                        <option value="Actif" <?= (userNormalizeValue((string)$statut) === 'actif') ? 'selected' : ''; ?>>
+                            <?= htmlspecialchars(usersT('active')); ?>
+                        </option>
+                        <option value="Inactif" <?= (userNormalizeValue((string)$statut) === 'inactif') ? 'selected' : ''; ?>>
+                            <?= htmlspecialchars(usersT('inactive')); ?>
+                        </option>
                     </select>
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label">Nouveau mot de passe</label>
+                    <label class="form-label"><?= htmlspecialchars(usersT('new_password')); ?></label>
                     <div class="input-with-icon">
                         <i class="bi bi-lock"></i>
                         <input type="password"
                                name="mot_de_passe"
                                class="form-control"
-                               placeholder="Laisser vide si inchangé">
+                               placeholder="<?= htmlspecialchars(usersT('unchanged_password')); ?>">
                     </div>
                 </div>
 
@@ -166,12 +233,12 @@ $idRoleUser = $utilisateur['id_role'] ?? $utilisateur['ID_ROLE'] ?? '';
 
                 <a href="<?= BASE_URL ?>?page=utilisateurs" class="btn btn-light border">
                     <i class="bi bi-x-circle"></i>
-                    Annuler
+                    <?= htmlspecialchars(usersT('cancel')); ?>
                 </a>
 
                 <button type="submit" class="btn btn-primary">
                     <i class="bi bi-check-circle"></i>
-                    Mettre à jour
+                    <?= htmlspecialchars(usersT('update')); ?>
                 </button>
 
             </div>
